@@ -3,139 +3,65 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Simulador de Voto por Demografia</title>
+  <title>Simulador de Voto por Demografia (MVP)</title>
   <style>
-    :root{
-      --border:#ddd;
-      --bg:#fafafa;
-      --muted:#666;
-      --danger:#b00020;
-    }
-    body { font-family: system-ui, Arial, sans-serif; margin: 18px; max-width: 1150px; }
-    h1 { margin: 0 0 8px; font-size: 18px; }
-    .small { color: var(--muted); font-size: 13px; margin-top: 6px; line-height: 1.35; }
-    button { font-size: 14px; padding: 7px 10px; }
-
+    body { font-family: system-ui, Arial, sans-serif; margin: 24px; max-width: 1150px; }
+    h1 { margin: 0 0 10px; font-size: 20px; }
+    .small { color: #555; font-size: 13px; margin-top: 6px; }
     table { border-collapse: collapse; width: 100%; margin-top: 14px; }
-    th, td { border: 1px solid var(--border); padding: 8px; vertical-align: middle; }
+    th, td { border: 1px solid #ddd; padding: 8px; vertical-align: middle; }
     th { background: #f6f6f6; text-align: left; }
-    td.num { text-align: right; white-space: nowrap; }
-    .rowmeta { white-space: nowrap; }
+    td.num { width: 98px; white-space: nowrap; text-align: right; }
+    input { font-size: 14px; padding: 6px 8px; width: 88px; text-align: right; }
+    button { font-size: 14px; padding: 6px 10px; }
 
-    /* Segmented bar */
-    .barWrap { min-width: 260px; }
-    .segbar {
-      position: relative;
-      display: flex;
-      height: 22px;
-      border-radius: 10px;
-      overflow: hidden;
-      background: #eee;
-      border: 1px solid var(--border);
-      touch-action: none; /* we handle dragging */
-    }
-    .seg {
-      position: relative;
-      height: 100%;
-      display: block;
-      min-width: 0px;
-    }
-    .handle {
-      position: absolute;
-      top: -6px;
-      right: -8px;
-      width: 16px;
-      height: 34px;
-      cursor: ew-resize;
-      touch-action: none;
-      background: rgba(0,0,0,0); /* invisible grab area */
-    }
-    .handle::after{
-      content:"";
-      position:absolute;
-      left: 7px; top: 8px;
-      width: 2px; height: 18px;
-      background: rgba(255,255,255,0.9);
-      box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
-      border-radius: 1px;
-    }
+    .result { margin-top: 14px; padding: 12px; border: 1px solid #ddd; background: #fafafa; }
+    .barwrap { margin-top: 10px; }
+    .bar { height: 14px; background: #e6e6e6; border-radius: 8px; overflow: hidden; }
+    .seg { height: 100%; display: inline-block; }
 
-    /* Numeric chips */
-    .chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 8px;
-    }
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 4px 8px;
-      background: white;
-      font-size: 13px;
-      white-space: nowrap;
-    }
-    .dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-    .chip input {
-      width: 44px;
-      text-align: right;
-      padding: 2px 4px;
-      font-size: 13px;
-    }
+    .errorbox { margin-top: 12px; padding: 10px 12px; border: 1px solid #b00020; background: #fff5f6; color: #8b0018; }
+    .rowbad { background: #fff5f6; }
+    .sumok { color: #1b5e20; font-weight: 600; }
+    .sumbad { color: #b00020; font-weight: 700; }
 
     .totalrow td { background: #f8f8f8; font-weight: 700; }
-    .result { margin-top: 14px; padding: 12px; border: 1px solid var(--border); background: var(--bg); }
-    .barwrap2 { margin-top: 10px; }
-    .bar2 { height: 14px; background: #e6e6e6; border-radius: 8px; overflow: hidden; }
-    .seg2 { height: 100%; display: inline-block; }
+    .muted { color: #666; font-weight: 600; }
 
-    /* candidate colors (fixed palette, mapped by index after shuffle) */
+    /* segment colors (5) */
     .c0 { background: #4c78a8; }
     .c1 { background: #f58518; }
     .c2 { background: #54a24b; }
     .c3 { background: #e45756; }
     .c4 { background: #72b7b2; }
-
-    /* mobile friendliness */
-    @media (max-width: 760px){
-      body { margin: 14px; }
-      .barWrap { min-width: 220px; }
-      th.meta, td.meta { display:none; } /* hide separate meta cols on small screens */
-      td.mobileMeta { display: table-cell; }
-      th.mobileMeta { display: table-cell; }
-    }
-    @media (min-width: 761px){
-      th.mobileMeta, td.mobileMeta { display:none; }
-    }
   </style>
 </head>
 <body>
-  <h1>Simulador de Voto por Demografia</h1>
+  <h1>Simulador de Voto por Demografia (MVP)</h1>
 
   <div class="small">
-    Ajuste, em cada um dos 8 grupos, a distribuição de 100% por 5 candidatos.
-    A soma é sempre 100% (ajuste automático). Use a régua para mudanças rápidas e os números para afinação.
+    Preencha percentagens inteiras (0–100) por cada um dos 8 grupos (idade × género × escolaridade).
+    Cada linha tem de somar <strong>exatamente</strong> 100%.
+  </div>
+
+  <div class="small">
+    Nota: está a distribuir 100% <em>apenas</em> por estes 5 candidatos (não há “Outros” / brancos / indecisos).
   </div>
 
   <div style="margin-top:10px;">
-    <button id="resetBtn" type="button">Repor (20% em tudo)</button>
+    <button id="resetBtn" type="button">Repor (20 em tudo)</button>
   </div>
 
   <div id="app"></div>
+
+  <div id="validation" class="errorbox" style="display:none;"></div>
 
   <div class="result">
     <strong>Resultado:</strong>
     <div id="verdict" style="margin-top:8px;"></div>
 
-    <div class="barwrap2">
-      <div class="bar2" id="overallBar"></div>
+    <div class="barwrap">
+      <div class="bar" id="overallBar"></div>
     </div>
 
     <div class="small" style="margin-top:10px;">
@@ -145,9 +71,9 @@
   </div>
 
 <script>
-/* ----------------------------
-   CONFIG
----------------------------- */
+/**
+ * 5 candidatos, ordem aleatória no carregamento (reduz primacy effects).
+ */
 const CANDIDATES_BASE = [
   { key: "av",  label: "André Ventura" },
   { key: "jcf", label: "João Cotrim de Figueiredo" },
@@ -164,14 +90,19 @@ function shuffle(arr) {
   }
   return a;
 }
-const CANDIDATES = shuffle(CANDIDATES_BASE).map((c, idx) => ({...c, colorClass: `c${idx}`}));
+const CANDIDATES = shuffle(CANDIDATES_BASE);
 
+/**
+ * 8 células (idade → género → escolaridade).
+ * Pesos (%): ESCOLARIEDADE==99 removido e renormalizado.
+ */
 const CELLS = [
   // <55
   { id:"u55_h_nps", age:"<55", gender:"Homem",  edu:"Não pós-secundário",     w:16.9533 },
   { id:"u55_h_ps",  age:"<55", gender:"Homem",  edu:"Ensino Pós-Secundário",  w:12.13539 },
   { id:"u55_m_nps", age:"<55", gender:"Mulher", edu:"Não pós-secundário",     w:14.80357 },
   { id:"u55_m_ps",  age:"<55", gender:"Mulher", edu:"Ensino Pós-Secundário",  w:16.89007 },
+
   // 55+
   { id:"55p_h_nps", age:"55+", gender:"Homem",  edu:"Não pós-secundário",     w:15.49064 },
   { id:"55p_h_ps",  age:"55+", gender:"Homem",  edu:"Ensino Pós-Secundário",  w: 4.35424 },
@@ -179,150 +110,94 @@ const CELLS = [
   { id:"55p_m_ps",  age:"55+", gender:"Mulher", edu:"Ensino Pós-Secundário",  w: 5.066599 },
 ];
 
-const START_VALUE = 20;
+const SUM_TOL = 0; // exact 100
 
-/* ----------------------------
-   STATE
----------------------------- */
 let state = {}; // { [cellId]: { [candidateKey]: int } }
 
-function initState20(){
+function initState20() {
   state = {};
-  for (const cell of CELLS){
+  for (const cell of CELLS) {
     state[cell.id] = {};
-    for (const c of CANDIDATES) state[cell.id][c.key] = START_VALUE;
+    for (const c of CANDIDATES) state[cell.id][c.key] = 20;
   }
 }
 
-/* ----------------------------
-   HELPERS
----------------------------- */
-function el(tag, attrs={}, children=[]){
+function el(tag, attrs={}, children=[]) {
   const node = document.createElement(tag);
-  for (const [k,v] of Object.entries(attrs)){
+  for (const [k,v] of Object.entries(attrs)) {
     if (k === "class") node.className = v;
     else if (k === "html") node.innerHTML = v;
-    else if (k === "text") node.textContent = v;
     else node.setAttribute(k, v);
   }
   for (const c of children) node.appendChild(c);
   return node;
 }
 
-function clampInt(x){
-  if (Number.isNaN(x)) return 0;
-  x = Math.round(x);
-  return Math.max(0, Math.min(100, x));
+function fmtPct(x, d=2) { return `${x.toFixed(d)}%`; }
+
+function clampInt(v) {
+  if (Number.isNaN(v)) return 0;
+  v = Math.round(v);
+  v = Math.max(0, Math.min(100, v));
+  return v;
 }
 
-function rowSum(cellId){
+function rowSum(cellId) {
   let s = 0;
-  for (const c of CANDIDATES) s += state[cellId][c.key] ?? 0;
+  for (const c of CANDIDATES) s += (state[cellId][c.key] ?? 0);
   return s;
 }
 
-/**
- * Rebalance a row to sum exactly 100 after changing one value.
- * Strategy:
- *  - If sum > 100: subtract excess from other candidates, starting from the largest.
- *  - If sum < 100: add deficit to other candidates, starting from the smallest.
- * This keeps the row valid without user friction.
- */
-function rebalanceRow(cellId, fixedKey){
-  // Ensure all ints
-  for (const c of CANDIDATES){
-    state[cellId][c.key] = clampInt(state[cellId][c.key]);
+function allRowsValid() {
+  for (const cell of CELLS) {
+    const s = rowSum(cell.id);
+    if (Math.abs(100 - s) > SUM_TOL) return false;
   }
-
-  let sum = rowSum(cellId);
-  if (sum === 100) return;
-
-  const others = CANDIDATES
-    .map(c => c.key)
-    .filter(k => k !== fixedKey);
-
-  if (sum > 100){
-    let excess = sum - 100;
-    // subtract from largest first
-    others.sort((a,b) => (state[cellId][b] - state[cellId][a]));
-    for (const k of others){
-      if (excess <= 0) break;
-      const take = Math.min(excess, state[cellId][k]);
-      state[cellId][k] -= take;
-      excess -= take;
-    }
-    // if still excess (only possible if others all 0), reduce fixedKey
-    if (excess > 0){
-      state[cellId][fixedKey] = Math.max(0, state[cellId][fixedKey] - excess);
-    }
-  } else {
-    let deficit = 100 - sum;
-    // add to smallest first
-    others.sort((a,b) => (state[cellId][a] - state[cellId][b]));
-    for (const k of others){
-      if (deficit <= 0) break;
-      const cap = 100 - state[cellId][k];
-      const give = Math.min(deficit, cap);
-      state[cellId][k] += give;
-      deficit -= give;
-    }
-    // if still deficit (only possible if others all 100), increase fixedKey
-    if (deficit > 0){
-      state[cellId][fixedKey] = Math.min(100, state[cellId][fixedKey] + deficit);
-    }
-  }
-
-  // final safety: fix rounding drift by adjusting the biggest non-fixed or fixed
-  sum = rowSum(cellId);
-  if (sum !== 100){
-    const diff = 100 - sum;
-    // try adjust largest capacity in non-fixed
-    let target = fixedKey;
-    for (const k of others){
-      if (diff > 0 && state[cellId][k] < 100) { target = k; break; }
-      if (diff < 0 && state[cellId][k] > 0)   { target = k; break; }
-    }
-    state[cellId][target] = clampInt(state[cellId][target] + diff);
-  }
+  return true;
 }
 
-/* ----------------------------
-   COMPUTATIONS
----------------------------- */
-function computeWeightedTotals(){
+/**
+ * Running weighted totals (no normalization): gives feedback even if rows incomplete.
+ */
+function computeRunningTotals() {
   const totals = {};
   for (const c of CANDIDATES) totals[c.key] = 0;
 
-  for (const cell of CELLS){
+  for (const cell of CELLS) {
     const w = cell.w / 100.0;
-    for (const cand of CANDIDATES){
-      totals[cand.key] += w * (state[cell.id][cand.key] / 100.0);
+    for (const cand of CANDIDATES) {
+      totals[cand.key] += w * ((state[cell.id][cand.key] ?? 0) / 100.0);
     }
   }
-  return totals; // proportions sum to 1
+  return totals;
 }
 
-function verdictFromTotals(totals){
+/**
+ * Valid overall totals (sum to 1) only if every row sums to 100.
+ */
+function computeOverallIfValid() {
+  if (!allRowsValid()) return null;
+  return computeRunningTotals(); // with all rows valid, sums to 1
+}
+
+function verdictFromOverall(overall) {
   const ranked = CANDIDATES.map(c => ({
     key: c.key,
     label: c.label,
-    share: totals[c.key]
+    share: overall[c.key]
   })).sort((a,b) => b.share - a.share);
 
   const top = ranked[0];
   const topPct = top.share * 100;
 
-  if (topPct >= 51.0){
+  if (topPct >= 51.0) {
     return `Candidato ganha à primeira volta: <strong>${top.label}</strong> (${topPct.toFixed(1)}%).`;
   }
   const second = ranked[1];
   return `Não há vencedor à primeira volta. Passam à segunda volta: <strong>${top.label}</strong> (${topPct.toFixed(1)}%) e <strong>${second.label}</strong> (${(second.share*100).toFixed(1)}%).`;
 }
 
-/* ----------------------------
-   RENDER
----------------------------- */
-function render(){
+function renderTable() {
   const app = document.getElementById("app");
   app.innerHTML = "";
 
@@ -330,103 +205,75 @@ function render(){
   const thead = el("thead");
   const trh = el("tr");
 
-  // Desktop meta columns
-  trh.appendChild(el("th", { class:"meta", html:"Idade" }));
-  trh.appendChild(el("th", { class:"meta", html:"Género" }));
-  trh.appendChild(el("th", { class:"meta", html:"Escolaridade" }));
-  trh.appendChild(el("th", { class:"meta", html:"Peso" }));
+  trh.appendChild(el("th", { html: "Idade" }));
+  trh.appendChild(el("th", { html: "Género" }));
+  trh.appendChild(el("th", { html: "Escolaridade" }));
+  trh.appendChild(el("th", { html: "Peso" }));
 
-  // Mobile condensed meta
-  trh.appendChild(el("th", { class:"mobileMeta", html:"Grupo" }));
-  trh.appendChild(el("th", { class:"mobileMeta", html:"Peso" }));
+  for (const c of CANDIDATES) trh.appendChild(el("th", { html: `${c.label} (%)` }));
+  trh.appendChild(el("th", { html: "Soma" }));
 
-  trh.appendChild(el("th", { html:"Distribuição (régua + números)" }));
-  trh.appendChild(el("th", { class:"num", html:"Soma" }));
   thead.appendChild(trh);
   table.appendChild(thead);
 
   const tbody = el("tbody");
 
-  for (const cell of CELLS){
-    const tr = el("tr", { id:`row_${cell.id}` });
+  CELLS.forEach((cell) => {
+    const tr = el("tr", { id: `row_${cell.id}` });
 
-    // Desktop meta cols
-    tr.appendChild(el("td", { class:"meta rowmeta", html: cell.age }));
-    tr.appendChild(el("td", { class:"meta rowmeta", html: cell.gender }));
-    tr.appendChild(el("td", { class:"meta", html: cell.edu }));
-    tr.appendChild(el("td", { class:"meta num", html: `${cell.w.toFixed(2)}%` }));
+    tr.appendChild(el("td", { html: cell.age }));
+    tr.appendChild(el("td", { html: cell.gender }));
+    tr.appendChild(el("td", { html: cell.edu }));
+    tr.appendChild(el("td", { class: "num", html: fmtPct(cell.w, 2) }));
 
-    // Mobile meta cols
-    tr.appendChild(el("td", { class:"mobileMeta", html: `${cell.age} · ${cell.gender} · ${cell.edu}` }));
-    tr.appendChild(el("td", { class:"mobileMeta num", html: `${cell.w.toFixed(2)}%` }));
-
-    // Controls cell
-    const controlsTd = el("td");
-
-    // segmented bar
-    const bar = el("div", { class:"segbar", id:`bar_${cell.id}` });
-    CANDIDATES.forEach((cand, idx) => {
-      const seg = el("div", { class:`seg ${cand.colorClass}`, id:`seg_${cell.id}_${cand.key}` });
-      // add handle between this and next segment (not for last)
-      if (idx < CANDIDATES.length - 1){
-        const handle = el("div", { class:"handle", id:`h_${cell.id}_${idx}` });
-        seg.appendChild(handle);
-        attachHandleDrag(handle, cell.id, idx);
-      }
-      bar.appendChild(seg);
-    });
-    controlsTd.appendChild(el("div", { class:"barWrap" }, [bar]));
-
-    // numeric chips
-    const chips = el("div", { class:"chips" });
     CANDIDATES.forEach((cand) => {
-      const dot = el("span", { class:`dot ${cand.colorClass}` });
-      const label = el("span", { text: cand.label });
       const input = el("input", {
         type: "number",
         min: "0",
         max: "100",
         step: "1",
         inputmode: "numeric",
-        value: String(state[cell.id][cand.key]),
-        id: `in_${cell.id}_${cand.key}`
+        value: String(state[cell.id][cand.key] ?? 0)
       });
 
-      // when user edits a number, enforce int and rebalance
-      const commit = () => {
+      input.addEventListener("input", () => {
         const v = clampInt(parseFloat(input.value));
         state[cell.id][cand.key] = v;
-        rebalanceRow(cell.id, cand.key);
-        // refresh visible values for this row
-        refreshRow(cell.id);
-        updateTotalsAndVerdict();
-      };
+        update();
+      });
 
-      input.addEventListener("change", commit);
-      input.addEventListener("blur", commit);
+      input.addEventListener("change", () => {
+        const v = clampInt(parseFloat(input.value));
+        state[cell.id][cand.key] = v;
+        input.value = String(v);
+        update();
+      });
 
-      const chip = el("div", { class:"chip" }, [dot, label, input]);
-      chips.appendChild(chip);
+      input.addEventListener("blur", () => {
+        const v = clampInt(parseFloat(input.value));
+        state[cell.id][cand.key] = v;
+        input.value = String(v);
+        update();
+      });
+
+      const td = el("td");
+      td.appendChild(input);
+      tr.appendChild(td);
     });
 
-    controlsTd.appendChild(chips);
-    tr.appendChild(controlsTd);
-
-    // Sum cell
     tr.appendChild(el("td", { class:"num", id:`sum_${cell.id}` }));
-
     tbody.appendChild(tr);
-  }
+  });
 
-  // Total row
-  const totalTr = el("tr", { class:"totalrow" });
-  totalTr.appendChild(el("td", { class:"meta", html:"Total ponderado", colspan:"4" }));
-  totalTr.appendChild(el("td", { class:"mobileMeta", html:"Total ponderado", colspan:"2" }));
-  const totalsCell = el("td");
-  const totalsChips = el("div", { class:"chips", id:"totalsChips" });
-  totalsCell.appendChild(totalsChips);
-  totalTr.appendChild(totalsCell);
-  totalTr.appendChild(el("td", { class:"num", id:"tot_sum" }));
+  // TOTAL row (running weighted totals, real-time)
+  const totalTr = el("tr", { class: "totalrow", id: "totalRow" });
+  totalTr.appendChild(el("td", { html: "Total ponderado", colspan: "4" }));
+
+  CANDIDATES.forEach((cand) => {
+    totalTr.appendChild(el("td", { class: "num", id: `tot_${cand.key}`, html: "<span class='muted'>0.0%</span>" }));
+  });
+
+  totalTr.appendChild(el("td", { class: "num", id: "tot_sum", html: "<span class='muted'>0.0%</span>" }));
   tbody.appendChild(totalTr);
 
   table.appendChild(tbody);
@@ -434,149 +281,97 @@ function render(){
 
   app.appendChild(el("div", {
     class:"small",
-    html:"Nota: “Ensino Pós-Secundário” = Bacharelato/Ensino Médio ou Licenciatura+ (categorias 6 ou 7). “Não quer responder” foi excluído dos pesos."
+    html: "Nota: “Ensino Pós-Secundário” = Bacharelato/Ensino Médio ou Licenciatura+ (categorias 6 ou 7). “Não quer responder” foi excluído dos pesos."
   }));
-
-  // initial refresh
-  for (const cell of CELLS) refreshRow(cell.id);
-  updateTotalsAndVerdict();
 }
 
-/* ----------------------------
-   BAR DRAGGING (handles)
----------------------------- */
-function attachHandleDrag(handleEl, cellId, boundaryIndex){
-  // boundaryIndex is between candidate i and i+1
-  const leftKey = CANDIDATES[boundaryIndex].key;
-  const rightKey = CANDIDATES[boundaryIndex + 1].key;
+function updateRowSumsAndHighlight() {
+  let badRows = [];
+  for (const cell of CELLS) {
+    const s = rowSum(cell.id);
+    const sumEl = document.getElementById(`sum_${cell.id}`);
+    const rowEl = document.getElementById(`row_${cell.id}`);
 
-  let dragging = false;
-  let startX = 0;
-  let startLeft = 0;
-  let startRight = 0;
-  let barWidth = 0;
-
-  const onDown = (e) => {
-    e.preventDefault();
-    dragging = true;
-    const bar = document.getElementById(`bar_${cellId}`);
-    barWidth = Math.max(1, bar.getBoundingClientRect().width);
-    startX = (e.touches ? e.touches[0].clientX : e.clientX);
-    startLeft = state[cellId][leftKey];
-    startRight = state[cellId][rightKey];
-
-    window.addEventListener("mousemove", onMove, { passive: false });
-    window.addEventListener("mouseup", onUp, { passive: false });
-    window.addEventListener("touchmove", onMove, { passive: false });
-    window.addEventListener("touchend", onUp, { passive: false });
-  };
-
-  const onMove = (e) => {
-    if (!dragging) return;
-    e.preventDefault();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX);
-    const dx = x - startX;
-
-    // convert pixels to integer percentage points
-    const points = Math.round((dx / barWidth) * 100);
-
-    // transfer points from right to left (positive points move boundary right, increasing left)
-    let newLeft = startLeft + points;
-    let newRight = startRight - points;
-
-    // clamp to [0,100] while preserving sum of the pair
-    const pairSum = startLeft + startRight;
-    if (newLeft < 0) { newLeft = 0; newRight = pairSum; }
-    if (newRight < 0) { newRight = 0; newLeft = pairSum; }
-    if (newLeft > pairSum) { newLeft = pairSum; newRight = 0; }
-    if (newRight > pairSum) { newRight = pairSum; newLeft = 0; }
-
-    state[cellId][leftKey] = clampInt(newLeft);
-    state[cellId][rightKey] = clampInt(newRight);
-
-    // Safety: keep whole row at 100 by rebalancing on leftKey (pair move preserves row sum anyway)
-    // but rounding might drift by +/-1; fix it.
-    rebalanceRow(cellId, leftKey);
-
-    refreshRow(cellId);
-    updateTotalsAndVerdict();
-  };
-
-  const onUp = (e) => {
-    if (!dragging) return;
-    e.preventDefault();
-    dragging = false;
-
-    window.removeEventListener("mousemove", onMove);
-    window.removeEventListener("mouseup", onUp);
-    window.removeEventListener("touchmove", onMove);
-    window.removeEventListener("touchend", onUp);
-  };
-
-  handleEl.addEventListener("mousedown", onDown, { passive: false });
-  handleEl.addEventListener("touchstart", onDown, { passive: false });
-}
-
-/* ----------------------------
-   REFRESH UI
----------------------------- */
-function refreshRow(cellId){
-  // update segment widths
-  for (const cand of CANDIDATES){
-    const seg = document.getElementById(`seg_${cellId}_${cand.key}`);
-    if (seg) seg.style.flexBasis = `${state[cellId][cand.key]}%`;
-    // update numeric inputs if present
-    const inp = document.getElementById(`in_${cellId}_${cand.key}`);
-    if (inp && document.activeElement !== inp) inp.value = String(state[cellId][cand.key]);
-  }
-  const s = rowSum(cellId);
-  const sumEl = document.getElementById(`sum_${cellId}`);
-  if (sumEl) sumEl.textContent = `${s}%`;
-}
-
-function updateTotalsAndVerdict(){
-  const totals = computeWeightedTotals();
-
-  // totals chips row
-  const totalsChips = document.getElementById("totalsChips");
-  if (totalsChips){
-    totalsChips.innerHTML = "";
-    for (const cand of CANDIDATES){
-      const dot = el("span", { class:`dot ${cand.colorClass}` });
-      const txt = el("span", { html: `${cand.label}: ${(totals[cand.key]*100).toFixed(1)}%` });
-      totalsChips.appendChild(el("div", { class:"chip" }, [dot, txt]));
+    const ok = (s === 100);
+    if (sumEl) {
+      sumEl.textContent = s + "%";
+      sumEl.className = "num " + (ok ? "sumok" : "sumbad");
     }
+    if (rowEl) rowEl.classList.toggle("rowbad", !ok);
+    if (!ok) badRows.push({ cell, sum: s });
   }
 
-  // sum (should be 100.0)
-  const sumPct = Object.values(totals).reduce((a,b) => a + b, 0) * 100;
-  const sumEl = document.getElementById("tot_sum");
-  if (sumEl) sumEl.textContent = `${sumPct.toFixed(1)}%`;
+  const validation = document.getElementById("validation");
+  if (badRows.length > 0) {
+    validation.style.display = "block";
+    const items = badRows.map(r =>
+      `<li><strong>${r.cell.age}</strong> · ${r.cell.gender} · ${r.cell.edu}: soma = ${r.sum}%</li>`
+    ).join("");
+    validation.innerHTML = `
+      <div><strong>Corrigir antes de obter o resultado:</strong> cada linha tem de somar 100% (valores inteiros).</div>
+      <ul style="margin:8px 0 0 20px;">${items}</ul>
+    `;
+  } else {
+    validation.style.display = "none";
+    validation.innerHTML = "";
+  }
+}
 
-  // verdict
-  document.getElementById("verdict").innerHTML = verdictFromTotals(totals);
-
-  // overall bar
-  const overallBar = document.getElementById("overallBar");
-  overallBar.innerHTML = "";
+function renderTotalsRow(totals) {
+  let sum = 0;
   CANDIDATES.forEach((cand) => {
-    overallBar.appendChild(el("span", {
-      class: `seg2 ${cand.colorClass}`,
-      style: `width:${(totals[cand.key]*100).toFixed(4)}%`
-    }));
+    const v = totals[cand.key] * 100;
+    sum += v;
+    const cell = document.getElementById(`tot_${cand.key}`);
+    if (cell) cell.innerHTML = `${v.toFixed(1)}%`;
+  });
+  const sEl = document.getElementById("tot_sum");
+  if (sEl) sEl.innerHTML = `${sum.toFixed(1)}%`;
+}
+
+function renderBar(overallOrRunning) {
+  const bar = document.getElementById("overallBar");
+  bar.innerHTML = "";
+  if (!overallOrRunning) return;
+
+  CANDIDATES.forEach((c, idx) => {
+    const width = (overallOrRunning[c.key] * 100);
+    const seg = el("span", { class: `seg c${idx}`, style: `width:${Math.max(0, width).toFixed(4)}%` });
+    bar.appendChild(seg);
   });
 }
 
-/* ----------------------------
-   BOOT
----------------------------- */
+function update() {
+  updateRowSumsAndHighlight();
+
+  // Always update running totals row
+  const running = computeRunningTotals();
+  renderTotalsRow(running);
+
+  // Verdict only if valid
+  const verdictEl = document.getElementById("verdict");
+  const overall = computeOverallIfValid();
+
+  if (!overall) {
+    verdictEl.innerHTML = "—";
+    renderBar(running);
+    return;
+  }
+
+  verdictEl.innerHTML = verdictFromOverall(overall);
+  renderBar(overall);
+}
+
 document.getElementById("resetBtn").addEventListener("click", () => {
   initState20();
-  render();
+  renderTable();
+  update();
 });
 
+// boot
 initState20();
-render();
+renderTable();
+update();
 </script>
 </body>
-</html> 
+</html>
