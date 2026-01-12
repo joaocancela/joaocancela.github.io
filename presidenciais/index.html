@@ -25,7 +25,7 @@
     .sumok { color: #1b5e20; font-weight: 600; }
     .sumbad { color: #b00020; font-weight: 700; }
 
-    /* simple, distinct segment colors without extra deps */
+    /* segment colors */
     .c0 { background: #4c78a8; }
     .c1 { background: #f58518; }
     .c2 { background: #54a24b; }
@@ -38,11 +38,12 @@
   <h1>Simulador de Voto por Demografia (MVP)</h1>
 
   <div class="small">
-    Preencha percentagens por cada um dos 8 grupos (idade × género × escolaridade). Cada linha tem de somar 100%.
+    Preencha percentagens inteiras (0–100) por cada um dos 8 grupos (idade × género × escolaridade).
+    Cada linha tem de somar <strong>exatamente</strong> 100%.
   </div>
 
   <div style="margin-top:10px;">
-    <button id="resetBtn" type="button">Repor (valores iguais por candidato)</button>
+    <button id="resetBtn" type="button">Repor (valores iguais)</button>
   </div>
 
   <div id="app"></div>
@@ -50,15 +51,16 @@
   <div id="validation" class="errorbox" style="display:none;"></div>
 
   <div class="result">
-    <strong>Resultado global implícito (ponderado):</strong>
-    <div id="overallText" style="margin-top:8px;"></div>
+    <strong>Resultado:</strong>
+    <div id="verdict" style="margin-top:8px;"></div>
 
     <div class="barwrap">
       <div class="bar" id="overallBar"></div>
     </div>
 
     <div class="small" style="margin-top:10px;">
-      Método: resultado global = Σ (peso do grupo × percentagem atribuída no grupo). Sem normalização automática.
+      Regra: 1.ª volta se algum candidato tiver <strong>50%+1 ponto percentual</strong> (isto é, ≥ 51.0%).
+      Caso contrário, passam os dois primeiros.
     </div>
   </div>
 
@@ -69,7 +71,7 @@
  */
 const FIXED_LAST = { key: "outros", label: "Outros" };
 const CANDIDATES_BASE = [
-  { key: "av", label: "André Ventura" },
+  { key: "av",  label: "André Ventura" },
   { key: "jcf", label: "João Cotrim de Figueiredo" },
   { key: "hgm", label: "Henrique Gouveia e Melo" },
   { key: "ajs", label: "António José Seguro" },
@@ -91,8 +93,7 @@ const CANDIDATES = [...shuffle(CANDIDATES_BASE), FIXED_LAST];
 /**
  * CONFIG: 8 células na ordem pedida:
  * Idade (<55, 55+) → Género (Homem, Mulher) → Escolaridade (Não pós-secundário, Ensino Pós-Secundário)
- *
- * Pesos (%): os teus valores (com ESCOLARIEDADE==99 removido e renormalizado).
+ * Pesos (%): (ESCOLARIEDADE==99 removido e renormalizado).
  */
 const CELLS = [
   // <55
@@ -108,18 +109,21 @@ const CELLS = [
   { id:"55p_m_ps",  age:"55+", gender:"Mulher", edu:"Ensino Pós-Secundário",  w: 5.066599 },
 ];
 
-// Hard constraint tolerance for row sum (because inputs are decimals)
-const SUM_TOL = 0.05; // accepts 99.95..100.05
+// Hard constraint: exact 100 (integers), so no tolerance.
+const SUM_TOL = 0;
 
-// State: per cell, candidate shares in %
+// State: per cell, candidate shares in integer %
 let state = {}; // { [cellId]: { [candidateKey]: number } }
 
 function initStateEqual() {
   state = {};
-  const equal = 100 / CANDIDATES.length;
+  const base = Math.floor(100 / CANDIDATES.length); // 16
+  const rem = 100 - base * CANDIDATES.length;       // 4
   for (const cell of CELLS) {
     state[cell.id] = {};
-    for (const c of CANDIDATES) state[cell.id][c.key] = equal;
+    CANDIDATES.forEach((c, idx) => {
+      state[cell.id][c.key] = base + (idx < rem ? 1 : 0);
+    });
   }
 }
 
@@ -148,6 +152,13 @@ function allRowsValid() {
     if (Math.abs(100 - s) > SUM_TOL) return false;
   }
   return true;
+}
+
+function clampInt(v) {
+  if (Number.isNaN(v)) return 0;
+  v = Math.round(v);
+  v = Math.max(0, Math.min(100, v));
+  return v;
 }
 
 function renderTable() {
@@ -184,16 +195,31 @@ function renderTable() {
         type: "number",
         min: "0",
         max: "100",
-        step: "0.1",
-        value: (state[cell.id][cand.key] ?? 0).toFixed(1)
+        step: "1",
+        inputmode: "numeric",
+        value: String(state[cell.id][cand.key] ?? 0)
       });
 
+      // On input, clamp to int but don't force-correct the visible value mid-typing too aggressively;
+      // we'll normalize the display on blur/change.
       input.addEventListener("input", () => {
-        let v = parseFloat(input.value);
-        if (Number.isNaN(v)) v = 0;
-        v = Math.max(0, Math.min(100, v));
+        const v = clampInt(parseFloat(input.value));
         state[cell.id][cand.key] = v;
-        update();
+        update(false);
+      });
+
+      input.addEventListener("change", () => {
+        const v = clampInt(parseFloat(input.value));
+        state[cell.id][cand.key] = v;
+        input.value = String(v);
+        update(true);
+      });
+
+      input.addEventListener("blur", () => {
+        const v = clampInt(parseFloat(input.value));
+        state[cell.id][cand.key] = v;
+        input.value = String(v);
+        update(true);
       });
 
       const td = el("td");
@@ -208,11 +234,16 @@ function renderTable() {
   table.appendChild(tbody);
   app.appendChild(table);
 
-  app.appendChild(el("div", { class:"small", html: "Nota: “Ensino Pós-Secundário” = Bacharelato/Ensino Médio ou Licenciatura+ (categorias 6 ou 7). “Não quer responder” foi excluído dos pesos." }));
+  app.appendChild(el("div", {
+    class:"small",
+    html: "Nota: “Ensino Pós-Secundário” = Bacharelato/Ensino Médio ou Licenciatura+ (categorias 6 ou 7). “Não quer responder” foi excluído dos pesos."
+  }));
 }
 
+/**
+ * Compute overall shares as proportions (sum to 1), only if valid.
+ */
 function computeOverall() {
-  // assumes rows are valid; otherwise returns null
   if (!allRowsValid()) return null;
 
   const overall = {};
@@ -224,7 +255,34 @@ function computeOverall() {
       overall[cand.key] += w * (state[cell.id][cand.key] / 100.0);
     }
   }
-  return overall; // proportions summing to 1
+  return overall;
+}
+
+/**
+ * Determine verdict:
+ * - Winner in 1st round if >= 51.0% (50%+1 pp)
+ * - Else top 2 go to 2nd round
+ */
+function verdictFromOverall(overall) {
+  // Build ranked list
+  const ranked = CANDIDATES.map(c => ({
+    key: c.key,
+    label: c.label,
+    share: overall[c.key] // proportion
+  }))
+  .sort((a,b) => b.share - a.share);
+
+  const top = ranked[0];
+  const topPct = top.share * 100;
+
+  if (topPct >= 51.0) {
+    return `Candidato ganha à primeira volta: <strong>${top.label}</strong> (${topPct.toFixed(1)}%).`;
+  }
+
+  const second = ranked[1];
+
+  // Handle potential tie for 2nd in a simple, deterministic way: list the top 2 by sort order.
+  return `Não há vencedor à primeira volta. Passam à segunda volta: <strong>${top.label}</strong> (${topPct.toFixed(1)}%) e <strong>${second.label}</strong> (${(second.share*100).toFixed(1)}%).`;
 }
 
 function updateRowSumsAndHighlight() {
@@ -234,14 +292,12 @@ function updateRowSumsAndHighlight() {
     const sumEl = document.getElementById(`sum_${cell.id}`);
     const rowEl = document.getElementById(`row_${cell.id}`);
 
-    const ok = Math.abs(100 - s) <= SUM_TOL;
+    const ok = (s === 100);
     if (sumEl) {
-      sumEl.textContent = s.toFixed(1) + "%";
+      sumEl.textContent = s + "%";
       sumEl.className = "num " + (ok ? "sumok" : "sumbad");
     }
-    if (rowEl) {
-      rowEl.classList.toggle("rowbad", !ok);
-    }
+    if (rowEl) rowEl.classList.toggle("rowbad", !ok);
     if (!ok) badRows.push({ cell, sum: s });
   }
 
@@ -249,10 +305,10 @@ function updateRowSumsAndHighlight() {
   if (badRows.length > 0) {
     validation.style.display = "block";
     const items = badRows.map(r =>
-      `<li><strong>${r.cell.age}</strong> · ${r.cell.gender} · ${r.cell.edu}: soma = ${r.sum.toFixed(1)}%</li>`
+      `<li><strong>${r.cell.age}</strong> · ${r.cell.gender} · ${r.cell.edu}: soma = ${r.sum}%</li>`
     ).join("");
     validation.innerHTML = `
-      <div><strong>Corrigir antes de ver o resultado global:</strong> cada linha tem de somar 100%.</div>
+      <div><strong>Corrigir antes de obter o resultado:</strong> cada linha tem de somar 100% (valores inteiros).</div>
       <ul style="margin:8px 0 0 20px;">${items}</ul>
     `;
   } else {
@@ -261,44 +317,45 @@ function updateRowSumsAndHighlight() {
   }
 }
 
-function renderOverall(overall) {
-  const overallText = document.getElementById("overallText");
+function renderBar(overall) {
   const overallBar = document.getElementById("overallBar");
-
-  if (!overall) {
-    overallText.textContent = "—";
-    overallBar.innerHTML = "";
-    return;
-  }
-
-  // text
-  const parts = CANDIDATES.map((c) => `${c.label}: ${(overall[c.key]*100).toFixed(1)}%`);
-  overallText.textContent = parts.join(" • ");
-
-  // bar
   overallBar.innerHTML = "";
+  if (!overall) return;
+
   CANDIDATES.forEach((c, idx) => {
-    const seg = el("span", { class: `seg c${idx}`, style: `width:${(overall[c.key]*100).toFixed(4)}%` });
+    const width = (overall[c.key] * 100);
+    const seg = el("span", { class: `seg c${idx}`, style: `width:${width.toFixed(4)}%` });
     overallBar.appendChild(seg);
   });
 }
 
-function update() {
+function update(forceRecalcText) {
+  // forceRecalcText param kept for cleanliness; not strictly necessary.
   updateRowSumsAndHighlight();
+
+  const verdictEl = document.getElementById("verdict");
   const overall = computeOverall();
-  renderOverall(overall);
+
+  if (!overall) {
+    verdictEl.innerHTML = "—";
+    renderBar(null);
+    return;
+  }
+
+  verdictEl.innerHTML = verdictFromOverall(overall);
+  renderBar(overall);
 }
 
 document.getElementById("resetBtn").addEventListener("click", () => {
   initStateEqual();
   renderTable();
-  update();
+  update(true);
 });
 
 // boot
 initStateEqual();
 renderTable();
-update();
+update(true);
 </script>
 </body>
 </html>
