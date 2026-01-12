@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Simulador de Voto por Demografia (MVP)</title>
   <style>
-    body { font-family: system-ui, Arial, sans-serif; margin: 24px; max-width: 1100px; }
+    body { font-family: system-ui, Arial, sans-serif; margin: 24px; max-width: 1150px; }
     h1 { margin: 0 0 10px; font-size: 20px; }
     .small { color: #555; font-size: 13px; margin-top: 6px; }
     table { border-collapse: collapse; width: 100%; margin-top: 14px; }
     th, td { border: 1px solid #ddd; padding: 8px; vertical-align: middle; }
     th { background: #f6f6f6; text-align: left; }
-    td.num { width: 92px; white-space: nowrap; }
-    input { font-size: 14px; padding: 6px 8px; width: 88px; }
+    td.num { width: 98px; white-space: nowrap; text-align: right; }
+    input { font-size: 14px; padding: 6px 8px; width: 88px; text-align: right; }
     button { font-size: 14px; padding: 6px 10px; }
 
     .result { margin-top: 14px; padding: 12px; border: 1px solid #ddd; background: #fafafa; }
@@ -24,6 +24,10 @@
     .rowbad { background: #fff5f6; }
     .sumok { color: #1b5e20; font-weight: 600; }
     .sumbad { color: #b00020; font-weight: 700; }
+
+    .totalrow td { background: #f8f8f8; font-weight: 700; }
+    .totalrow td:first-child { text-align: left; }
+    .muted { color: #666; font-weight: 600; }
 
     /* segment colors */
     .c0 { background: #4c78a8; }
@@ -43,7 +47,7 @@
   </div>
 
   <div style="margin-top:10px;">
-    <button id="resetBtn" type="button">Repor (valores iguais)</button>
+    <button id="resetBtn" type="button">Repor (tudo a 0)</button>
   </div>
 
   <div id="app"></div>
@@ -87,7 +91,6 @@ function shuffle(arr) {
   }
   return a;
 }
-
 const CANDIDATES = [...shuffle(CANDIDATES_BASE), FIXED_LAST];
 
 /**
@@ -109,21 +112,17 @@ const CELLS = [
   { id:"55p_m_ps",  age:"55+", gender:"Mulher", edu:"Ensino Pós-Secundário",  w: 5.066599 },
 ];
 
-// Hard constraint: exact 100 (integers), so no tolerance.
+// Hard constraint: exact 100 (integers).
 const SUM_TOL = 0;
 
 // State: per cell, candidate shares in integer %
 let state = {}; // { [cellId]: { [candidateKey]: number } }
 
-function initStateEqual() {
+function initStateZeros() {
   state = {};
-  const base = Math.floor(100 / CANDIDATES.length); // 16
-  const rem = 100 - base * CANDIDATES.length;       // 4
   for (const cell of CELLS) {
     state[cell.id] = {};
-    CANDIDATES.forEach((c, idx) => {
-      state[cell.id][c.key] = base + (idx < rem ? 1 : 0);
-    });
+    for (const c of CANDIDATES) state[cell.id][c.key] = 0;
   }
 }
 
@@ -140,6 +139,13 @@ function el(tag, attrs={}, children=[]) {
 
 function fmtPct(x, d=2) { return `${x.toFixed(d)}%`; }
 
+function clampInt(v) {
+  if (Number.isNaN(v)) return 0;
+  v = Math.round(v);
+  v = Math.max(0, Math.min(100, v));
+  return v;
+}
+
 function rowSum(cellId) {
   let s = 0;
   for (const c of CANDIDATES) s += (state[cellId][c.key] ?? 0);
@@ -154,11 +160,57 @@ function allRowsValid() {
   return true;
 }
 
-function clampInt(v) {
-  if (Number.isNaN(v)) return 0;
-  v = Math.round(v);
-  v = Math.max(0, Math.min(100, v));
-  return v;
+/**
+ * Compute "running" weighted totals even if rows aren't valid:
+ * - For each row, treat missing remainder as 0 (no normalization)
+ * - This gives users immediate feedback about the implied totals *given what they've entered*
+ */
+function computeRunningTotals() {
+  const totals = {};
+  for (const c of CANDIDATES) totals[c.key] = 0;
+
+  for (const cell of CELLS) {
+    const w = cell.w / 100.0;
+    for (const cand of CANDIDATES) {
+      totals[cand.key] += w * ((state[cell.id][cand.key] ?? 0) / 100.0);
+    }
+  }
+  return totals; // proportions, but may sum < 1 if rows incomplete
+}
+
+/**
+ * Compute overall shares as proportions (sum to 1), only if all rows are valid.
+ */
+function computeOverallIfValid() {
+  if (!allRowsValid()) return null;
+
+  const overall = {};
+  for (const c of CANDIDATES) overall[c.key] = 0;
+
+  for (const cell of CELLS) {
+    const w = cell.w / 100.0;
+    for (const cand of CANDIDATES) {
+      overall[cand.key] += w * (state[cell.id][cand.key] / 100.0);
+    }
+  }
+  return overall;
+}
+
+function verdictFromOverall(overall) {
+  const ranked = CANDIDATES.map(c => ({
+    key: c.key,
+    label: c.label,
+    share: overall[c.key]
+  })).sort((a,b) => b.share - a.share);
+
+  const top = ranked[0];
+  const topPct = top.share * 100;
+
+  if (topPct >= 51.0) {
+    return `Candidato ganha à primeira volta: <strong>${top.label}</strong> (${topPct.toFixed(1)}%).`;
+  }
+  const second = ranked[1];
+  return `Não há vencedor à primeira volta. Passam à segunda volta: <strong>${top.label}</strong> (${topPct.toFixed(1)}%) e <strong>${second.label}</strong> (${(second.share*100).toFixed(1)}%).`;
 }
 
 function renderTable() {
@@ -200,8 +252,6 @@ function renderTable() {
         value: String(state[cell.id][cand.key] ?? 0)
       });
 
-      // On input, clamp to int but don't force-correct the visible value mid-typing too aggressively;
-      // we'll normalize the display on blur/change.
       input.addEventListener("input", () => {
         const v = clampInt(parseFloat(input.value));
         state[cell.id][cand.key] = v;
@@ -231,6 +281,17 @@ function renderTable() {
     tbody.appendChild(tr);
   });
 
+  // TOTAL row (running weighted totals, real-time)
+  const totalTr = el("tr", { class: "totalrow", id: "totalRow" });
+  totalTr.appendChild(el("td", { html: "Total ponderado", colspan: "4" }));
+
+  CANDIDATES.forEach((cand) => {
+    totalTr.appendChild(el("td", { class: "num", id: `tot_${cand.key}`, html: "<span class='muted'>0.0%</span>" }));
+  });
+
+  totalTr.appendChild(el("td", { class: "num", id: "tot_sum", html: "<span class='muted'>0.0%</span>" }));
+  tbody.appendChild(totalTr);
+
   table.appendChild(tbody);
   app.appendChild(table);
 
@@ -238,51 +299,6 @@ function renderTable() {
     class:"small",
     html: "Nota: “Ensino Pós-Secundário” = Bacharelato/Ensino Médio ou Licenciatura+ (categorias 6 ou 7). “Não quer responder” foi excluído dos pesos."
   }));
-}
-
-/**
- * Compute overall shares as proportions (sum to 1), only if valid.
- */
-function computeOverall() {
-  if (!allRowsValid()) return null;
-
-  const overall = {};
-  for (const c of CANDIDATES) overall[c.key] = 0;
-
-  for (const cell of CELLS) {
-    const w = cell.w / 100.0;
-    for (const cand of CANDIDATES) {
-      overall[cand.key] += w * (state[cell.id][cand.key] / 100.0);
-    }
-  }
-  return overall;
-}
-
-/**
- * Determine verdict:
- * - Winner in 1st round if >= 51.0% (50%+1 pp)
- * - Else top 2 go to 2nd round
- */
-function verdictFromOverall(overall) {
-  // Build ranked list
-  const ranked = CANDIDATES.map(c => ({
-    key: c.key,
-    label: c.label,
-    share: overall[c.key] // proportion
-  }))
-  .sort((a,b) => b.share - a.share);
-
-  const top = ranked[0];
-  const topPct = top.share * 100;
-
-  if (topPct >= 51.0) {
-    return `Candidato ganha à primeira volta: <strong>${top.label}</strong> (${topPct.toFixed(1)}%).`;
-  }
-
-  const second = ranked[1];
-
-  // Handle potential tie for 2nd in a simple, deterministic way: list the top 2 by sort order.
-  return `Não há vencedor à primeira volta. Passam à segunda volta: <strong>${top.label}</strong> (${topPct.toFixed(1)}%) e <strong>${second.label}</strong> (${(second.share*100).toFixed(1)}%).`;
 }
 
 function updateRowSumsAndHighlight() {
@@ -317,28 +333,45 @@ function updateRowSumsAndHighlight() {
   }
 }
 
-function renderBar(overall) {
-  const overallBar = document.getElementById("overallBar");
-  overallBar.innerHTML = "";
-  if (!overall) return;
+function renderTotalsRow(totals) {
+  let sum = 0;
+  CANDIDATES.forEach((cand) => {
+    const v = totals[cand.key] * 100;
+    sum += v;
+    const cell = document.getElementById(`tot_${cand.key}`);
+    if (cell) cell.innerHTML = `${v.toFixed(1)}%`;
+  });
+  const sEl = document.getElementById("tot_sum");
+  if (sEl) sEl.innerHTML = `${sum.toFixed(1)}%`;
+}
+
+function renderBar(overallOrRunning) {
+  const bar = document.getElementById("overallBar");
+  bar.innerHTML = "";
+  if (!overallOrRunning) return;
 
   CANDIDATES.forEach((c, idx) => {
-    const width = (overall[c.key] * 100);
-    const seg = el("span", { class: `seg c${idx}`, style: `width:${width.toFixed(4)}%` });
-    overallBar.appendChild(seg);
+    const width = (overallOrRunning[c.key] * 100);
+    const seg = el("span", { class: `seg c${idx}`, style: `width:${Math.max(0, width).toFixed(4)}%` });
+    bar.appendChild(seg);
   });
 }
 
-function update(forceRecalcText) {
-  // forceRecalcText param kept for cleanliness; not strictly necessary.
+function update() {
   updateRowSumsAndHighlight();
 
+  // Always update running totals row
+  const running = computeRunningTotals();
+  renderTotalsRow(running);
+
+  // Verdict only if valid
   const verdictEl = document.getElementById("verdict");
-  const overall = computeOverall();
+  const overall = computeOverallIfValid();
 
   if (!overall) {
     verdictEl.innerHTML = "—";
-    renderBar(null);
+    // show running bar as feedback (may sum < 100 if incomplete)
+    renderBar(running);
     return;
   }
 
@@ -347,15 +380,15 @@ function update(forceRecalcText) {
 }
 
 document.getElementById("resetBtn").addEventListener("click", () => {
-  initStateEqual();
+  initStateZeros();
   renderTable();
-  update(true);
+  update();
 });
 
 // boot
-initStateEqual();
+initStateZeros();
 renderTable();
-update(true);
+update();
 </script>
 </body>
 </html>
