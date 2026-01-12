@@ -26,16 +26,14 @@
     .sumbad { color: #b00020; font-weight: 700; }
 
     .totalrow td { background: #f8f8f8; font-weight: 700; }
-    .totalrow td:first-child { text-align: left; }
     .muted { color: #666; font-weight: 600; }
 
-    /* segment colors */
+    /* segment colors (5) */
     .c0 { background: #4c78a8; }
     .c1 { background: #f58518; }
     .c2 { background: #54a24b; }
     .c3 { background: #e45756; }
     .c4 { background: #72b7b2; }
-    .c5 { background: #bdbdbd; }
   </style>
 </head>
 <body>
@@ -46,8 +44,12 @@
     Cada linha tem de somar <strong>exatamente</strong> 100%.
   </div>
 
+  <div class="small">
+    Nota: está a distribuir 100% <em>apenas</em> por estes 5 candidatos (não há “Outros” / brancos / indecisos).
+  </div>
+
   <div style="margin-top:10px;">
-    <button id="resetBtn" type="button">Repor (tudo a 0)</button>
+    <button id="resetBtn" type="button">Repor (20 em tudo)</button>
   </div>
 
   <div id="app"></div>
@@ -70,10 +72,8 @@
 
 <script>
 /**
- * CONFIG: 6 opções (5 nomes aleatorizados + "Outros" sempre no fim).
- * "Outros" corresponde ao agregado (Catarina Martins + Jorge Pinto + António Filipe).
+ * 5 candidatos, ordem aleatória no carregamento (reduz primacy effects).
  */
-const FIXED_LAST = { key: "outros", label: "Outros" };
 const CANDIDATES_BASE = [
   { key: "av",  label: "André Ventura" },
   { key: "jcf", label: "João Cotrim de Figueiredo" },
@@ -82,7 +82,6 @@ const CANDIDATES_BASE = [
   { key: "lmm", label: "Luís Marques Mendes" }
 ];
 
-// Fisher–Yates shuffle
 function shuffle(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -91,12 +90,11 @@ function shuffle(arr) {
   }
   return a;
 }
-const CANDIDATES = [...shuffle(CANDIDATES_BASE), FIXED_LAST];
+const CANDIDATES = shuffle(CANDIDATES_BASE);
 
 /**
- * CONFIG: 8 células na ordem pedida:
- * Idade (<55, 55+) → Género (Homem, Mulher) → Escolaridade (Não pós-secundário, Ensino Pós-Secundário)
- * Pesos (%): (ESCOLARIEDADE==99 removido e renormalizado).
+ * 8 células (idade → género → escolaridade).
+ * Pesos (%): ESCOLARIEDADE==99 removido e renormalizado.
  */
 const CELLS = [
   // <55
@@ -112,17 +110,15 @@ const CELLS = [
   { id:"55p_m_ps",  age:"55+", gender:"Mulher", edu:"Ensino Pós-Secundário",  w: 5.066599 },
 ];
 
-// Hard constraint: exact 100 (integers).
-const SUM_TOL = 0;
+const SUM_TOL = 0; // exact 100
 
-// State: per cell, candidate shares in integer %
-let state = {}; // { [cellId]: { [candidateKey]: number } }
+let state = {}; // { [cellId]: { [candidateKey]: int } }
 
-function initStateZeros() {
+function initState20() {
   state = {};
   for (const cell of CELLS) {
     state[cell.id] = {};
-    for (const c of CANDIDATES) state[cell.id][c.key] = 0;
+    for (const c of CANDIDATES) state[cell.id][c.key] = 20;
   }
 }
 
@@ -161,9 +157,7 @@ function allRowsValid() {
 }
 
 /**
- * Compute "running" weighted totals even if rows aren't valid:
- * - For each row, treat missing remainder as 0 (no normalization)
- * - This gives users immediate feedback about the implied totals *given what they've entered*
+ * Running weighted totals (no normalization): gives feedback even if rows incomplete.
  */
 function computeRunningTotals() {
   const totals = {};
@@ -175,25 +169,15 @@ function computeRunningTotals() {
       totals[cand.key] += w * ((state[cell.id][cand.key] ?? 0) / 100.0);
     }
   }
-  return totals; // proportions, but may sum < 1 if rows incomplete
+  return totals;
 }
 
 /**
- * Compute overall shares as proportions (sum to 1), only if all rows are valid.
+ * Valid overall totals (sum to 1) only if every row sums to 100.
  */
 function computeOverallIfValid() {
   if (!allRowsValid()) return null;
-
-  const overall = {};
-  for (const c of CANDIDATES) overall[c.key] = 0;
-
-  for (const cell of CELLS) {
-    const w = cell.w / 100.0;
-    for (const cand of CANDIDATES) {
-      overall[cand.key] += w * (state[cell.id][cand.key] / 100.0);
-    }
-  }
-  return overall;
+  return computeRunningTotals(); // with all rows valid, sums to 1
 }
 
 function verdictFromOverall(overall) {
@@ -255,21 +239,21 @@ function renderTable() {
       input.addEventListener("input", () => {
         const v = clampInt(parseFloat(input.value));
         state[cell.id][cand.key] = v;
-        update(false);
+        update();
       });
 
       input.addEventListener("change", () => {
         const v = clampInt(parseFloat(input.value));
         state[cell.id][cand.key] = v;
         input.value = String(v);
-        update(true);
+        update();
       });
 
       input.addEventListener("blur", () => {
         const v = clampInt(parseFloat(input.value));
         state[cell.id][cand.key] = v;
         input.value = String(v);
-        update(true);
+        update();
       });
 
       const td = el("td");
@@ -370,7 +354,6 @@ function update() {
 
   if (!overall) {
     verdictEl.innerHTML = "—";
-    // show running bar as feedback (may sum < 100 if incomplete)
     renderBar(running);
     return;
   }
@@ -380,13 +363,13 @@ function update() {
 }
 
 document.getElementById("resetBtn").addEventListener("click", () => {
-  initStateZeros();
+  initState20();
   renderTable();
   update();
 });
 
 // boot
-initStateZeros();
+initState20();
 renderTable();
 update();
 </script>
