@@ -97,16 +97,16 @@ const CANDIDATES = shuffle(CANDIDATES_BASE);
  * Pesos (%): ESCOLARIEDADE==99 removido e renormalizado.
  */
 const CELLS = [
-  // <55
-  { id:"u55_h_nps", age:"<55", gender:"Homem",  edu:"Não pós-secundário",     w:16.9533 },
-  { id:"u55_h_ps",  age:"<55", gender:"Homem",  edu:"Ensino Pós-Secundário",  w:12.13539 },
-  { id:"u55_m_nps", age:"<55", gender:"Mulher", edu:"Não pós-secundário",     w:14.80357 },
-  { id:"u55_m_ps",  age:"<55", gender:"Mulher", edu:"Ensino Pós-Secundário",  w:16.89007 },
+  // 18-54
+  { id:"u55_h_nps", age:"18-54", gender:"Homem",  edu:"Básico - Secundário",     w:16.9533 },
+  { id:"u55_h_ps",  age:"18-54", gender:"Homem",  edu:"Ensino Pós-Secundário",  w:12.13539 },
+  { id:"u55_m_nps", age:"18-54", gender:"Mulher", edu:"Básico - Secundário",     w:14.80357 },
+  { id:"u55_m_ps",  age:"18-54", gender:"Mulher", edu:"Ensino Pós-Secundário",  w:16.89007 },
 
   // 55+
-  { id:"55p_h_nps", age:"55+", gender:"Homem",  edu:"Não pós-secundário",     w:15.49064 },
+  { id:"55p_h_nps", age:"55+", gender:"Homem",  edu:"Básico - Secundário",     w:15.49064 },
   { id:"55p_h_ps",  age:"55+", gender:"Homem",  edu:"Ensino Pós-Secundário",  w: 4.35424 },
-  { id:"55p_m_nps", age:"55+", gender:"Mulher", edu:"Não pós-secundário",     w:14.30619 },
+  { id:"55p_m_nps", age:"55+", gender:"Mulher", edu:"Básico - Secundário",     w:14.30619 },
   { id:"55p_m_ps",  age:"55+", gender:"Mulher", edu:"Ensino Pós-Secundário",  w: 5.066599 },
 ];
 
@@ -208,7 +208,7 @@ function renderTable() {
   trh.appendChild(el("th", { html: "Idade" }));
   trh.appendChild(el("th", { html: "Género" }));
   trh.appendChild(el("th", { html: "Escolaridade" }));
-  trh.appendChild(el("th", { html: "Peso" }));
+  trh.appendChild(el("th", { html: "Peso no eleitorado (2024)" }));
 
   for (const c of CANDIDATES) trh.appendChild(el("th", { html: `${c.label} (%)` }));
   trh.appendChild(el("th", { html: "Soma" }));
