@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Demographic Vote Mixer (MVP)</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 24px; max-width: 980px; }
+    h1 { margin: 0 0 12px; font-size: 20px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    select, input { font-size: 14px; padding: 6px 8px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 14px; }
+    th, td { border: 1px solid #ddd; padding: 8px; vertical-align: middle; }
+    th { background: #f6f6f6; text-align: left; }
+    td.num { width: 90px; }
+    .small { color: #555; font-size: 13px; margin-top: 8px; }
+    .result { margin-top: 14px; padding: 12px; border: 1px solid #ddd; background: #fafafa; }
+    .barwrap { margin-top: 10px; }
+    .bar { height: 14px; background: #e6e6e6; border-radius: 8px; overflow: hidden; }
+    .seg { height: 100%; display: inline-block; }
+    .seg.ps { background: #4c78a8; }
+    .seg.ad { background: #f58518; }
+    .seg.ch { background: #54a24b; }
+    .seg.out { background: #bdbdbd; }
+    .warn { color: #b00020; font-size: 13px; margin-top: 8px; }
+    button { font-size: 14px; padding: 6px 10px; }
+  </style>
+</head>
+<body>
+  <h1>Demographic Vote Mixer (MVP)</h1>
+
+  <div class="row">
+    <label for="dimension"><strong>Dimension</strong></label>
+    <select id="dimension"></select>
+
+    <span class="small">Edit party labels in code if needed.</span>
+    <button id="resetBtn" type="button">Reset rows to equal shares</button>
+  </div>
+
+  <div id="app"></div>
+
+  <div class="result">
+    <strong>Overall implied vote (weighted):</strong>
+    <div id="overallText" style="margin-top:8px;"></div>
+
+    <div class="barwrap">
+      <div class="bar" id="overallBar"></div>
+    </div>
+
+    <div id="warn" class="warn" style="display:none;"></div>
+    <div class="small" style="margin-top:10px;">
+      Method: overall = Σ (group_weight × group_vote_share). Weights are your observed % for the selected dimension.
+    </div>
+  </div>
+
+<script>
+/**
+ * CONFIG: parties shown (change labels/keys here).
+ * Keep keys stable; labels can be changed freely.
+ */
+const PARTIES = [
+  { key: "ps",  label: "PS",     cls: "ps" },
+  { key: "ad",  label: "AD",     cls: "ad" },
+  { key: "ch",  label: "CH",     cls: "ch" },
+  { key: "out", label: "Outros", cls: "out" },
+];
+
+/**
+ * CONFIG: your distributions (Percent -> weights).
+ * Values here are decimals that sum to ~1.
+ */
+const DIMENSIONS = {
+  "Age": [
+    { id: "18_24", label: "18–24",  w: 0.0987 },
+    { id: "25_34", label: "25–34",  w: 0.1401 },
+    { id: "35_54", label: "35–54",  w: 0.3638 },
+    { id: "55_64", label: "55–64",  w: 0.1926 },
+    { id: "65p",   label: "65+",    w: 0.2048 },
+  ],
+  "Gender": [
+    { id: "m", label: "Homem",  w: 0.4908 },
+    { id: "f", label: "Mulher", w: 0.5092 },
+  ],
+  "Education": [
+    { id: "lt4",  label: "< 4º ano / sem escolaridade", w: 0.0361 },
+    { id: "4",    label: "4º ano",                      w: 0.0839 },
+    { id: "6",    label: "6º ano",                      w: 0.0581 },
+    { id: "9",    label: "9º ano",                      w: 0.1245 },
+    { id: "12",   label: "12º ano",                     w: 0.2909 },
+    { id: "bach", label: "Bacharelato / ensino médio",   w: 0.0472 },
+    { id: "uni",  label: "Licenciatura ou mais",         w: 0.3226 },
+    { id: "nr",   label: "Não quer responder",           w: 0.0367 },
+  ],
+};
+
+// In-memory state: for each dimension+group store party shares (percent 0..100)
+let state = {}; // { [dimensionKey]: { [groupId]: {ps:25,ad:25,ch:25,out:25} } }
+
+function initState() {
+  state = {};
+  for (const [dimKey, groups] of Object.entries(DIMENSIONS)) {
+    state[dimKey] = {};
+    for (const g of groups) {
+      state[dimKey][g.id] = {};
+      const equal = 100 / PARTIES.length;
+      for (const p of PARTIES) state[dimKey][g.id][p.key] = equal;
+    }
+  }
+}
+
+function el(tag, attrs={}, children=[]) {
+  const node = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs)) {
+    if (k === "class") node.className = v;
+    else if (k === "html") node.innerHTML = v;
+    else node.setAttribute(k, v);
+  }
+  for (const c of children) node.appendChild(c);
+  return node;
+}
+
+function renderDimensionOptions() {
+  const sel = document.getElementById("dimension");
+  sel.innerHTML = "";
+  Object.keys(DIMENSIONS).forEach((k) => {
+    sel.appendChild(el("option", { value: k, html: k }));
+  });
+}
+
+function currentDimensionKey() {
+  return document.getElementById("dimension").value;
+}
+
+function renderTable() {
+  const dimKey = currentDimensionKey();
+  const groups = DIMENSIONS[dimKey];
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+
+  const table = el("table");
+  const thead = el("thead");
+  const trh = el("tr");
+  trh.appendChild(el("th", { html: "Group" }));
+  trh.appendChild(el("th", { html: "Weight" }));
+  for (const p of PARTIES) trh.appendChild(el("th", { html: p.label + " (%)" }));
+  trh.appendChild(el("th", { html: "Row sum" }));
+  thead.appendChild(trh);
+  table.appendChild(thead);
+
+  const tbody = el("tbody");
+
+  for (const g of groups) {
+    const tr = el("tr");
+    tr.appendChild(el("td", { html: g.label }));
+    tr.appendChild(el("td", { class: "num", html: (g.w*100).toFixed(2) + "%" }));
+
+    for (const p of PARTIES) {
+      const input = el("input", {
+        type: "number",
+        min: "0",
+        max: "100",
+        step: "0.1",
+        value: state[dimKey][g.id][p.key].toFixed(1),
+        style: "width: 80px;"
+      });
+
+      input.addEventListener("input", () => {
+        let v = parseFloat(input.value);
+        if (Number.isNaN(v)) v = 0;
+        v = Math.max(0, Math.min(100, v));
+        state[dimKey][g.id][p.key] = v;
+        update();
+      });
+
+      const td = el("td");
+      td.appendChild(input);
+      tr.appendChild(td);
+    }
+
+    const sumTd = el("td", { class: "num", id: `sum_${dimKey}_${g.id}` });
+    tr.appendChild(sumTd);
+
+    tbody.appendChild(tr);
+  }
+
+  table.appendChild(tbody);
+  app.appendChild(table);
+
+  app.appendChild(el("div", { class: "small", html: "Tip: Keep each row close to 100%. (The tool will warn you if not.)" }));
+}
+
+function computeOverall() {
+  const dimKey = currentDimensionKey();
+  const groups = DIMENSIONS[dimKey];
+  const overall = {};
+  for (const p of PARTIES) overall[p.key] = 0;
+
+  let worstRow = { id: null, diff: 0, sum: 0 };
+
+  for (const g of groups) {
+    const row = state[dimKey][g.id];
+    let rowsum = 0;
+    for (const p of PARTIES) rowsum += row[p.key];
+
+    const diff = Math.abs(100 - rowsum);
+    if (diff > worstRow.diff) worstRow = { id: g.id, diff, sum: rowsum };
+
+    // Normalize row to sum 1 when aggregating (prevents row-sum errors from breaking overall)
+    const denom = rowsum > 0 ? rowsum : 1;
+    for (const p of PARTIES) {
+      const share = row[p.key] / denom; // 0..1
+      overall[p.key] += g.w * share;
+    }
+  }
+
+  return { overall, worstRow };
+}
+
+function updateRowSums() {
+  const dimKey = currentDimensionKey();
+  const groups = DIMENSIONS[dimKey];
+  for (const g of groups) {
+    const row = state[dimKey][g.id];
+    let s = 0;
+    for (const p of PARTIES) s += row[p.key];
+    const cell = document.getElementById(`sum_${dimKey}_${g.id}`);
+    if (cell) cell.textContent = s.toFixed(1) + "%";
+  }
+}
+
+function renderOverall(overallObj, worstRow) {
+  const overallText = document.getElementById("overallText");
+  const overallBar = document.getElementById("overallBar");
+  const warn = document.getElementById("warn");
+
+  // text
+  const lines = PARTIES.map(p => {
+    const pct = overallObj[p.key] * 100;
+    return `${p.label}: ${pct.toFixed(1)}%`;
+  });
+  overallText.textContent = lines.join(" • ");
+
+  // bar
+  overallBar.innerHTML = "";
+  for (const p of PARTIES) {
+    const seg = el("span", {
+      class: `seg ${p.cls}`,
+      style: `width:${(overallObj[p.key]*100).toFixed(4)}%`
+    });
+    overallBar.appendChild(seg);
+  }
+
+  // warn if any row far from 100
+  if (worstRow.diff > 0.75) {
+    warn.style.display = "block";
+    warn.textContent = `Warning: at least one row is not close to 100% (largest deviation: ${worstRow.sum.toFixed(1)}%). Rows are auto-normalized for the overall calculation.`;
+  } else {
+    warn.style.display = "none";
+    warn.textContent = "";
+  }
+}
+
+function update() {
+  updateRowSums();
+  const { overall, worstRow } = computeOverall();
+  renderOverall(overall, worstRow);
+}
+
+function hookUI() {
+  document.getElementById("dimension").addEventListener("change", () => {
+    renderTable();
+    update();
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    const dimKey = currentDimensionKey();
+    const equal = 100 / PARTIES.length;
+    for (const g of DIMENSIONS[dimKey]) {
+      for (const p of PARTIES) state[dimKey][g.id][p.key] = equal;
+    }
+    renderTable();
+    update();
+  });
+}
+
+// boot
+initState();
+renderDimensionOptions();
+hookUI();
+renderTable();
+update();
+</script>
+</body>
+</html>
