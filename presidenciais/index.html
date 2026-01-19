@@ -413,9 +413,9 @@
     <div class="stickyInner">
       <div class="titleRow">
         <div>
-          <h1>Simulador de resultados na 2.ª volta da eleição presidencial de 2026 (Seguro vs Ventura)</h1>
+          <h1>Simulador de transferências — 2.ª volta (Seguro vs Ventura)</h1>
           <div class="subtle">
-            Ajusta, para cada grupo de eleitores da 1.ª volta, a participação na 2.ª volta e a divisão do voto válido entre os dois candidatos.
+            Ajuste, para cada grupo de eleitores da 1.ª volta, a participação na 2.ª volta e a divisão do voto válido entre os dois finalistas.
           </div>
         </div>
         <div class="topBtns">
@@ -442,15 +442,17 @@
   <div class="wrap">
     <div class="topBtns" style="justify-content:flex-start; margin-top: 14px;">
       <button id="presetNeutral">Neutro (inicial)</button>
+      <button id="presetAntiAV">Cenário: anti-Ventura</button>
+      <button id="presetMobilize">Cenário: mobilizar não-voto</button>
       <button id="resetAll">Repor</button>
     </div>
 
     <details id="helpBox">
-      <summary>O que é que isto faz?</summary>
+      <summary>O que isto faz (nota editorial)</summary>
       <p>
-        Os grupos são definidos pelo comportamento na 1.ª volta. Para cada grupo, escolhe-se (i) a percentagem que volta/passa a votar na 2.ª volta; e
-        (ii) entre os que votam nesse grupo, a divisão de votos entre os dois candidatos.
-        Assume-se que, quem vota na 2.ª volta, escolhe um dos dois (sem votos em branco branco/nulos na simulação). O objetivo é só explorar cenários e não prever resultados.
+        Os grupos são definidos pelo comportamento na 1.ª volta. Para cada grupo, escolhe-se (i) a percentagem que volta a votar na 2.ª volta; e
+        (ii) entre os que votam, a divisão do voto válido entre os dois finalistas.
+        Neste protótipo assume-se que, quem vota na 2.ª volta, escolhe um dos dois (sem branco/nulo na simulação). O objetivo é explorar cenários, não prever resultados.
       </p>
     </details>
 
@@ -460,7 +462,7 @@
   <div class="foot">
     <div class="footInner">
       <div class="note">
-        Dica: usa os botões +/– para ajustes finos. O link copiado guarda o estado atual dos parâmetros.
+        Dica: use os botões +/– para ajustes finos. O link copiado guarda o estado atual dos controlos (útil para discussão editorial).
       </div>
       <div class="topBtns">
         <button id="btnResetToNeutral">Voltar ao neutro</button>
@@ -484,8 +486,8 @@ const GROUPS = [
   { key:"jcf", name:"João Cotrim de Figueiredo", votes:902571 },
   { key:"hgm", name:"Henrique Gouveia e Melo", votes:695091 },
   { key:"lmm", name:"Luís Marques Mendes", votes:637394 },
-  { key:"left_other", name:"Esquerda (Catarina Martins + António Filipe + Manuel João Vieira + Jorge Pinto + Hubmerto Correia", votes: (116303 + 92589 + 60899 + 38536 + 10893 + 4622) },
-  { key:"abst", name:"Abstenção, em branco e nulos", votes: (INSCRITOS - VOTANTES_1V) + 61226 + 65381 }
+  { key:"left_other", name:"Esquerda + Outros", votes: (116303 + 92589 + 60899 + 38536 + 10893 + 4622) },
+  { key:"abst", name:"Abstenção, brancos e nulos", votes: (INSCRITOS - VOTANTES_1V) + 61226 + 65381 }
 ];
 
 const FINAL_A = { label:"António José Seguro", colorVar:"--seguro" };
@@ -665,7 +667,7 @@ function buildCards(){
 
     const head = el("div", { class:"cardHead" }, [
       el("div", {}, [
-        el("div", { class:"cardTitle", text: g.name }),neutro
+        el("div", { class:"cardTitle", text: g.name }),
         el("div", { class:"cardMeta", text: "Grupo de origem (1.ª volta)" })
       ]),
       el("div", { class:"basePill", html: `Base: <strong>${baseShare.toFixed(2)}%</strong> dos inscritos` })
@@ -675,7 +677,7 @@ function buildCards(){
 
     /* Turnout */
     const turnoutLabel = el("div", { class:"ctrlLabel" }, [
-      el("span", { text: "Votam na 2.ª volta)" }),
+      el("span", { text: "Voltam a votar (2.ª volta)" }),
       el("strong", { id:`turnout_read_${g.key}`, text: state[g.key].turnout + "%" })
     ]);
 
