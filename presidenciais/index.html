@@ -440,11 +440,7 @@
   </div>
 
   <div class="wrap">
-    <div class="topBtns" style="justify-content:flex-start; margin-top: 14px;">
-      <button id="presetNeutral">Neutro (inicial)</button>
-      <button id="presetAntiAV">Cenário: anti-Ventura</button>
-      <button id="presetMobilize">Cenário: mobilizar não-voto</button>
-      <button id="resetAll">Repor</button>
+<button id="btnResetToNeutral">Voltar ao neutro</button>
     </div>
 
     <details id="helpBox">
@@ -466,9 +462,6 @@
       <div class="note">
         Dica: usa os botões +/– para ajustes finos. O link copiado guarda o estado atual dos controlos (útil para discussão editorial).
       </div>
-      <div class="topBtns">
-        <button id="btnResetToNeutral">Voltar ao neutro</button>
-      </div>
     </div>
   </div>
 
@@ -489,7 +482,7 @@ const GROUPS = [
   { key:"hgm", name:"Henrique Gouveia e Melo", votes:695091 },
   { key:"lmm", name:"Luís Marques Mendes", votes:637394 },
   { key:"left_other", name:"Esquerda + Outros", votes: (116303 + 92589 + 60899 + 38536 + 10893 + 4622) },
-  { key:"abst", name:"Abstenção, brancos e nulos", votes: (INSCRITOS - VOTANTES_1V) + 61226 + 65381 }
+  { key:"abst", name:"Abstenção, em branco e nulos", votes: (INSCRITOS - VOTANTES_1V) + 61226 + 65381 }
 ];
 
 const FINAL_A = { label:"António José Seguro", colorVar:"--seguro" };
@@ -524,24 +517,6 @@ function initNeutral(){
 }
 
 /* Presets for editorial exploration (not "prediction") */
-function presetAntiAV(){
-  // keep turnout same as neutral, shift non-finalists to Seguro
-  initNeutral();
-  for (const g of GROUPS){
-    if (g.key === "ajs") state[g.key].shareB = 0;
-    else if (g.key === "av") state[g.key].shareB = 100;
-    else state[g.key].shareB = 20; // 80% Seguro, 20% Ventura
-  }
-}
-function presetMobilize(){
-  initNeutral();
-  // bring some of the abst/branco/nulo into turnout + mild lean
-  state["abst"].turnout = 25;
-  state["abst"].shareB = 55;
-  // mild right drift among some centre-right groups
-  state["lmm"].shareB = 60;
-  state["hgm"].shareB = 55;
-}
 
 /* ---------------------------
    URL STATE (shareable)
@@ -936,20 +911,12 @@ document.getElementById("btnInfo").addEventListener("click", () => {
   d.scrollIntoView({ behavior:"smooth", block:"start" });
 });
 
-document.getElementById("presetNeutral").addEventListener("click", () => {
-  initNeutral(); buildCards(); renderHero(); writeToURL(); showToast("Neutro aplicado.");
-});
-document.getElementById("presetAntiAV").addEventListener("click", () => {
-  presetAntiAV(); buildCards(); renderHero(); writeToURL(); showToast("Cenário aplicado.");
-});
-document.getElementById("presetMobilize").addEventListener("click", () => {
-  presetMobilize(); buildCards(); renderHero(); writeToURL(); showToast("Cenário aplicado.");
-});
 document.getElementById("resetAll").addEventListener("click", () => {
-  initNeutral(); buildCards(); renderHero(); writeToURL(); showToast("Reposto.");
-});
-document.getElementById("btnResetToNeutral").addEventListener("click", () => {
-  initNeutral(); buildCards(); renderHero(); writeToURL(); showToast("Neutro aplicado.");
+  initNeutral();
+  buildCards();
+  renderHero();
+  writeToURL();
+  showToast("Reposto.");
 });
 
 /* ---------------------------
