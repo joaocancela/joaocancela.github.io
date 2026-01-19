@@ -3,375 +3,490 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Simulador de Voto por Demografia (MVP)</title>
+  <title>2.ª Volta — Simulador de Transferências</title>
   <style>
-    body { font-family: system-ui, Arial, sans-serif; margin: 24px; max-width: 1150px; }
-    h1 { margin: 0 0 10px; font-size: 20px; }
-    .small { color: #555; font-size: 13px; margin-top: 6px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 14px; }
-    th, td { border: 1px solid #ddd; padding: 8px; vertical-align: middle; }
-    th { background: #f6f6f6; text-align: left; }
-    td.num { width: 98px; white-space: nowrap; text-align: right; }
-    input { font-size: 14px; padding: 6px 8px; width: 88px; text-align: right; }
-    button { font-size: 14px; padding: 6px 10px; }
+    :root{
+      --border:#ddd;
+      --bg:#fafafa;
+      --muted:#666;
+      --a:#4c78a8;   /* Seguro */
+      --b:#e45756;   /* Ventura */
+    }
+    body{ font-family: system-ui, Arial, sans-serif; margin: 16px; max-width: 1100px; }
+    h1{ margin: 0 0 6px; font-size: 18px; }
+    .small{ color: var(--muted); font-size: 13px; line-height: 1.35; margin-top: 6px; }
+    .panel{
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      padding: 12px;
+      border-radius: 10px;
+    }
+    .grid{
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+    @media (max-width: 860px){
+      .grid{ grid-template-columns: 1fr; }
+    }
 
-    .result { margin-top: 14px; padding: 12px; border: 1px solid #ddd; background: #fafafa; }
-    .barwrap { margin-top: 10px; }
-    .bar { height: 14px; background: #e6e6e6; border-radius: 8px; overflow: hidden; }
-    .seg { height: 100%; display: inline-block; }
+    table{ width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td{ border: 1px solid var(--border); padding: 10px; vertical-align: top; }
+    th{ background: #f6f6f6; text-align: left; font-size: 13px; }
+    td{ font-size: 13px; }
+    .num{ text-align: right; white-space: nowrap; }
+    .name{ font-weight: 700; }
+    .meta{ color: var(--muted); font-size: 12px; margin-top: 4px; }
 
-    .errorbox { margin-top: 12px; padding: 10px 12px; border: 1px solid #b00020; background: #fff5f6; color: #8b0018; }
-    .rowbad { background: #fff5f6; }
-    .sumok { color: #1b5e20; font-weight: 600; }
-    .sumbad { color: #b00020; font-weight: 700; }
+    .controlTitle{ font-weight: 700; margin-bottom: 6px; }
+    .rowControls{ display: grid; grid-template-columns: 1fr; gap: 10px; }
 
-    .totalrow td { background: #f8f8f8; font-weight: 700; }
-    .muted { color: #666; font-weight: 600; }
+    /* Single slider bar (turnout) */
+    .barWrap{ display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+    input[type="range"]{ width: 100%; }
+    .pctBox{
+      width: 72px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      justify-content: flex-end;
+      white-space: nowrap;
+    }
+    .pctBox input{
+      width: 52px;
+      text-align: right;
+      padding: 4px 6px;
+      font-size: 13px;
+    }
 
-    /* segment colors (5) */
-    .c0 { background: #4c78a8; }
-    .c1 { background: #f58518; }
-    .c2 { background: #54a24b; }
-    .c3 { background: #e45756; }
-    .c4 { background: #72b7b2; }
+    /* Two-way segmented bar (Seguro vs Ventura) */
+    .segbar{
+      position: relative;
+      height: 22px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #eee;
+      touch-action: none;
+      display: flex;
+    }
+    .segA{ background: var(--a); height: 100%; }
+    .segB{ background: var(--b); height: 100%; }
+    .handle{
+      position: absolute;
+      top: -6px;
+      width: 16px;
+      height: 34px;
+      cursor: ew-resize;
+      touch-action: none;
+      transform: translateX(-8px);
+      background: rgba(0,0,0,0);
+    }
+    .handle::after{
+      content:"";
+      position:absolute;
+      left: 7px; top: 8px;
+      width: 2px; height: 18px;
+      background: rgba(255,255,255,0.95);
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+      border-radius: 1px;
+    }
+    .legend{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; font-size: 12px; color: var(--muted);
+      margin-top: 6px;
+    }
+    .dot{ width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; }
+    .dotA{ background: var(--a); }
+    .dotB{ background: var(--b); }
+
+    .sticky{
+      position: sticky;
+      bottom: 10px;
+      margin-top: 14px;
+      border: 1px solid var(--border);
+      background: white;
+      padding: 10px 12px;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    }
+
+    .winner{ font-weight: 800; }
+    .bar2{ height: 14px; background:#e6e6e6; border-radius: 8px; overflow:hidden; margin-top:10px; border: 1px solid var(--border); }
+    .seg2A{ background: var(--a); height: 100%; display:inline-block; }
+    .seg2B{ background: var(--b); height: 100%; display:inline-block; }
+
+    .btns{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; }
+    button{ font-size: 14px; padding: 8px 10px; }
   </style>
 </head>
 <body>
-  <h1>Simulador de Voto por Demografia (MVP)</h1>
-
+  <h1>2.ª Volta — Simulador de Transferências (AJS vs AV)</h1>
   <div class="small">
-    Preencha percentagens inteiras (0–100) por cada um dos 8 grupos (idade × género × escolaridade).
-    Cada linha tem de somar <strong>exatamente</strong> 100%.
+    Para cada grupo (definido pelo comportamento na 1.ª volta), indique:
+    (i) que percentagem volta a votar na 2.ª volta; (ii) entre os que votam, a divisão entre António José Seguro e André Ventura.
+    <br/>
+    Nota: aqui assume-se que quem vota na 2.ª volta escolhe um dos dois (sem branco/nulos na simulação).
   </div>
 
-  <div class="small">
-    Nota: está a distribuir 100% <em>apenas</em> por estes 5 candidatos (não há “Outros” / brancos / indecisos).
-  </div>
-
-  <div style="margin-top:10px;">
-    <button id="resetBtn" type="button">Repor (20 em tudo)</button>
+  <div class="btns">
+    <button id="resetBtn" type="button">Repor valores iniciais</button>
   </div>
 
   <div id="app"></div>
 
-  <div id="validation" class="errorbox" style="display:none;"></div>
-
-  <div class="result">
-    <strong>Resultado:</strong>
-    <div id="verdict" style="margin-top:8px;"></div>
-
-    <div class="barwrap">
-      <div class="bar" id="overallBar"></div>
-    </div>
-
-    <div class="small" style="margin-top:10px;">
-      Regra: 1.ª volta se algum candidato tiver <strong>50%+1 ponto percentual</strong> (isto é, ≥ 51.0%).
-      Caso contrário, passam os dois primeiros.
-    </div>
+  <div class="sticky">
+    <div id="summaryLine"></div>
+    <div class="bar2" id="overallBar"></div>
+    <div class="small" id="turnoutLine" style="margin-top:8px;"></div>
   </div>
 
 <script>
-/**
- * 5 candidatos, ordem aleatória no carregamento (reduz primacy effects).
- */
-const CANDIDATES_BASE = [
-  { key: "av",  label: "André Ventura" },
-  { key: "jcf", label: "João Cotrim de Figueiredo" },
-  { key: "hgm", label: "Henrique Gouveia e Melo" },
-  { key: "ajs", label: "António José Seguro" },
-  { key: "lmm", label: "Luís Marques Mendes" }
+/* ---------------------------
+   INPUT: 1.ª volta (dados do utilizador)
+--------------------------- */
+const INSCRITOS = 11017202;
+const VOTANTES_1V = 5767057;
+
+const GROUPS = [
+  { key:"ajs", name:"António José Seguro", votes:1754904 },
+  { key:"av",  name:"André Ventura", votes:1326648 },
+  { key:"jcf", name:"João Cotrim de Figueiredo", votes:902571 },
+  { key:"hgm", name:"Henrique Gouveia e Melo", votes:695091 },
+  { key:"lmm", name:"Luís Marques Mendes", votes:637394 },
+  { key:"outros", name:"Outros", votes: 323842 }, // Catarina, AF, MJV, JP, APS, HC
+  // Abstenção + branco + nulos (1.ª volta)
+  { key:"abst", name:"Abstenção, branco e nulos", votes: (INSCRITOS - VOTANTES_1V) + 61226 + 65381 }
 ];
 
-function shuffle(arr) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-const CANDIDATES = shuffle(CANDIDATES_BASE);
+// Two finalists
+const FINAL_A = { key:"AJS", label:"António José Seguro", color:"var(--a)" };
+const FINAL_B = { key:"AV",  label:"André Ventura",       color:"var(--b)" };
 
-/**
- * 8 células (idade → género → escolaridade).
- * Pesos (%): ESCOLARIEDADE==99 removido e renormalizado.
- */
-const CELLS = [
-  // <55
-  { id:"u55_h_nps", age:"<55", gender:"Homem",  edu:"Não pós-secundário",     w:16.9533 },
-  { id:"u55_h_ps",  age:"<55", gender:"Homem",  edu:"Ensino Pós-Secundário",  w:12.13539 },
-  { id:"u55_m_nps", age:"<55", gender:"Mulher", edu:"Não pós-secundário",     w:14.80357 },
-  { id:"u55_m_ps",  age:"<55", gender:"Mulher", edu:"Ensino Pós-Secundário",  w:16.89007 },
+/* ---------------------------
+   DEFAULTS (ajustáveis)
+   - Turnout: 100% para quem votou num candidato; 0% para abstenção/branco/nulos
+   - Preferência: grupos AJS/AV começam 100% no próprio; restantes 50/50
+--------------------------- */
+let state = {}; // per group: { turnout: int 0..100, shareB: int 0..100 } where shareB is AV among voters; AJS = 100-shareB
 
-  // 55+
-  { id:"55p_h_nps", age:"55+", gender:"Homem",  edu:"Não pós-secundário",     w:15.49064 },
-  { id:"55p_h_ps",  age:"55+", gender:"Homem",  edu:"Ensino Pós-Secundário",  w: 4.35424 },
-  { id:"55p_m_nps", age:"55+", gender:"Mulher", edu:"Não pós-secundário",     w:14.30619 },
-  { id:"55p_m_ps",  age:"55+", gender:"Mulher", edu:"Ensino Pós-Secundário",  w: 5.066599 },
-];
-
-const SUM_TOL = 0; // exact 100
-
-let state = {}; // { [cellId]: { [candidateKey]: int } }
-
-function initState20() {
+function initDefaults(){
   state = {};
-  for (const cell of CELLS) {
-    state[cell.id] = {};
-    for (const c of CANDIDATES) state[cell.id][c.key] = 20;
+  for (const g of GROUPS){
+    const votedCandidate = (g.key !== "abst");
+    const turnout = votedCandidate ? 100 : 0;
+
+    let shareB = 50; // AV
+    if (g.key === "av")  shareB = 100;
+    if (g.key === "ajs") shareB = 0;
+
+    state[g.key] = { turnout, shareB };
   }
 }
 
-function el(tag, attrs={}, children=[]) {
+/* ---------------------------
+   HELPERS
+--------------------------- */
+function el(tag, attrs={}, children=[]){
   const node = document.createElement(tag);
-  for (const [k,v] of Object.entries(attrs)) {
+  for (const [k,v] of Object.entries(attrs)){
     if (k === "class") node.className = v;
     else if (k === "html") node.innerHTML = v;
+    else if (k === "text") node.textContent = v;
     else node.setAttribute(k, v);
   }
   for (const c of children) node.appendChild(c);
   return node;
 }
-
-function fmtPct(x, d=2) { return `${x.toFixed(d)}%`; }
-
-function clampInt(v) {
-  if (Number.isNaN(v)) return 0;
-  v = Math.round(v);
-  v = Math.max(0, Math.min(100, v));
-  return v;
+function clampInt(x){
+  if (Number.isNaN(x)) return 0;
+  x = Math.round(x);
+  return Math.max(0, Math.min(100, x));
+}
+function fmtInt(n){
+  return n.toLocaleString("pt-PT");
+}
+function pct(x, d=1){
+  return (x*100).toFixed(d) + "%";
 }
 
-function rowSum(cellId) {
-  let s = 0;
-  for (const c of CANDIDATES) s += (state[cellId][c.key] ?? 0);
-  return s;
-}
+/* ---------------------------
+   COMPUTE
+--------------------------- */
+function computeSecondRound(){
+  let votesA = 0; // AJS
+  let votesB = 0; // AV
+  let totalVoters2 = 0;
 
-function allRowsValid() {
-  for (const cell of CELLS) {
-    const s = rowSum(cell.id);
-    if (Math.abs(100 - s) > SUM_TOL) return false;
+  for (const g of GROUPS){
+    const turnout = state[g.key].turnout / 100;
+    const shareB = state[g.key].shareB / 100;
+    const shareA = 1 - shareB;
+
+    const participating = g.votes * turnout;
+    totalVoters2 += participating;
+
+    votesA += participating * shareA;
+    votesB += participating * shareB;
   }
-  return true;
+
+  // normalize to valid shares among those who vote (should sum to 100)
+  const totalValid = votesA + votesB;
+  const shareA = totalValid > 0 ? votesA / totalValid : 0;
+  const shareB = totalValid > 0 ? votesB / totalValid : 0;
+
+  return { votesA, votesB, totalVoters2, totalValid, shareA, shareB };
 }
 
-/**
- * Running weighted totals (no normalization): gives feedback even if rows incomplete.
- */
-function computeRunningTotals() {
-  const totals = {};
-  for (const c of CANDIDATES) totals[c.key] = 0;
-
-  for (const cell of CELLS) {
-    const w = cell.w / 100.0;
-    for (const cand of CANDIDATES) {
-      totals[cand.key] += w * ((state[cell.id][cand.key] ?? 0) / 100.0);
-    }
+function verdict(res){
+  // threshold: 50%+1 pp => >=51.0%
+  const aPct = res.shareA * 100;
+  const bPct = res.shareB * 100;
+  if (aPct >= 51.0){
+    return { text: `Candidato ganha: <span class="winner">${FINAL_A.label}</span> (${aPct.toFixed(1)}%).`, winner:"A" };
   }
-  return totals;
-}
-
-/**
- * Valid overall totals (sum to 1) only if every row sums to 100.
- */
-function computeOverallIfValid() {
-  if (!allRowsValid()) return null;
-  return computeRunningTotals(); // with all rows valid, sums to 1
-}
-
-function verdictFromOverall(overall) {
-  const ranked = CANDIDATES.map(c => ({
-    key: c.key,
-    label: c.label,
-    share: overall[c.key]
-  })).sort((a,b) => b.share - a.share);
-
-  const top = ranked[0];
-  const topPct = top.share * 100;
-
-  if (topPct >= 51.0) {
-    return `Candidato ganha à primeira volta: <strong>${top.label}</strong> (${topPct.toFixed(1)}%).`;
+  if (bPct >= 51.0){
+    return { text: `Candidato ganha: <span class="winner">${FINAL_B.label}</span> (${bPct.toFixed(1)}%).`, winner:"B" };
   }
-  const second = ranked[1];
-  return `Não há vencedor à primeira volta. Passam à segunda volta: <strong>${top.label}</strong> (${topPct.toFixed(1)}%) e <strong>${second.label}</strong> (${(second.share*100).toFixed(1)}%).`;
+  // If neither reaches 51, still a winner exists by >50; but user asked this rule explicitly.
+  // We'll still state "sem maioria absoluta" and show who is ahead.
+  const lead = (aPct >= bPct) ? FINAL_A.label : FINAL_B.label;
+  const leadPct = Math.max(aPct, bPct).toFixed(1);
+  return { text: `Sem maioria absoluta (50%+1pp). À frente: <span class="winner">${lead}</span> (${leadPct}%).`, winner:null };
 }
 
-function renderTable() {
+/* ---------------------------
+   UI: segmented preference bar (AJS vs AV)
+   - one handle adjusting split; integer values
+--------------------------- */
+function attachPreferenceDrag(handle, groupKey){
+  let dragging = false;
+  let startX = 0;
+  let startShareB = 0;
+  let barWidth = 1;
+
+  const onDown = (e) => {
+    e.preventDefault();
+    dragging = true;
+    const bar = document.getElementById(`pref_bar_${groupKey}`);
+    barWidth = Math.max(1, bar.getBoundingClientRect().width);
+    startX = (e.touches ? e.touches[0].clientX : e.clientX);
+    startShareB = state[groupKey].shareB;
+
+    window.addEventListener("mousemove", onMove, { passive:false });
+    window.addEventListener("mouseup", onUp, { passive:false });
+    window.addEventListener("touchmove", onMove, { passive:false });
+    window.addEventListener("touchend", onUp, { passive:false });
+  };
+
+  const onMove = (e) => {
+    if (!dragging) return;
+    e.preventDefault();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX);
+    const dx = x - startX;
+    const delta = Math.round((dx / barWidth) * 100); // + => more AV
+    const newShareB = clampInt(startShareB + delta);
+
+    state[groupKey].shareB = newShareB;
+    refreshGroup(groupKey);
+    refreshSummary();
+  };
+
+  const onUp = (e) => {
+    if (!dragging) return;
+    e.preventDefault();
+    dragging = false;
+    window.removeEventListener("mousemove", onMove);
+    window.removeEventListener("mouseup", onUp);
+    window.removeEventListener("touchmove", onMove);
+    window.removeEventListener("touchend", onUp);
+  };
+
+  handle.addEventListener("mousedown", onDown, { passive:false });
+  handle.addEventListener("touchstart", onDown, { passive:false });
+}
+
+/* ---------------------------
+   RENDER
+--------------------------- */
+function render(){
   const app = document.getElementById("app");
   app.innerHTML = "";
 
   const table = el("table");
   const thead = el("thead");
-  const trh = el("tr");
-
-  trh.appendChild(el("th", { html: "Idade" }));
-  trh.appendChild(el("th", { html: "Género" }));
-  trh.appendChild(el("th", { html: "Escolaridade" }));
-  trh.appendChild(el("th", { html: "Peso" }));
-
-  for (const c of CANDIDATES) trh.appendChild(el("th", { html: `${c.label} (%)` }));
-  trh.appendChild(el("th", { html: "Soma" }));
-
-  thead.appendChild(trh);
+  thead.appendChild(el("tr", {}, [
+    el("th", { html:"Grupo (1.ª volta)" }),
+    el("th", { class:"num", html:"Votos/Eleitores (base)" }),
+    el("th", { class:"num", html:"% no total (base)" }),
+    el("th", { html:"2.ª volta — participação" }),
+    el("th", { html:"2.ª volta — escolha (AJS vs AV)" })
+  ]));
   table.appendChild(thead);
 
   const tbody = el("tbody");
+  for (const g of GROUPS){
+    const baseShare = g.votes / INSCRITOS;
 
-  CELLS.forEach((cell) => {
-    const tr = el("tr", { id: `row_${cell.id}` });
+    const turnoutBox = el("div", { class:"barWrap" }, [
+      el("input", {
+        type:"range", min:"0", max:"100", step:"1",
+        id:`turn_${g.key}`,
+        value: String(state[g.key].turnout)
+      }),
+      el("div", { class:"pctBox" }, [
+        el("input", { type:"number", min:"0", max:"100", step:"1", inputmode:"numeric", id:`turn_num_${g.key}` }),
+        el("span", { text:"%" })
+      ])
+    ]);
 
-    tr.appendChild(el("td", { html: cell.age }));
-    tr.appendChild(el("td", { html: cell.gender }));
-    tr.appendChild(el("td", { html: cell.edu }));
-    tr.appendChild(el("td", { class: "num", html: fmtPct(cell.w, 2) }));
+    const prefWrap = el("div", {}, []);
+    const segbar = el("div", { class:"segbar", id:`pref_bar_${g.key}` }, [
+      el("div", { class:"segA", id:`segA_${g.key}` }),
+      el("div", { class:"segB", id:`segB_${g.key}` }),
+      el("div", { class:"handle", id:`handle_${g.key}` })
+    ]);
+    const legend = el("div", { class:"legend" }, [
+      el("span", { html:`<span class="dot dotA"></span>${FINAL_A.label}` }),
+      el("span", { html:`<span class="dot dotB"></span>${FINAL_B.label}` })
+    ]);
 
-    CANDIDATES.forEach((cand) => {
-      const input = el("input", {
-        type: "number",
-        min: "0",
-        max: "100",
-        step: "1",
-        inputmode: "numeric",
-        value: String(state[cell.id][cand.key] ?? 0)
-      });
+    const prefNums = el("div", { class:"barWrap", style:"margin-top:8px;" }, [
+      el("div", { style:"width:100%;" , class:"small", html:"(entre os que votam na 2.ª volta)" }),
+      el("div", { class:"pctBox" }, [
+        el("input", { type:"number", min:"0", max:"100", step:"1", inputmode:"numeric", id:`b_num_${g.key}` }),
+        el("span", { text:"% AV" })
+      ])
+    ]);
 
-      input.addEventListener("input", () => {
-        const v = clampInt(parseFloat(input.value));
-        state[cell.id][cand.key] = v;
-        update();
-      });
+    prefWrap.appendChild(segbar);
+    prefWrap.appendChild(legend);
+    prefWrap.appendChild(prefNums);
 
-      input.addEventListener("change", () => {
-        const v = clampInt(parseFloat(input.value));
-        state[cell.id][cand.key] = v;
-        input.value = String(v);
-        update();
-      });
+    const tr = el("tr", { id:`row_${g.key}` }, [
+      el("td", {}, [
+        el("div", { class:"name", text:g.name }),
+        el("div", { class:"meta", text:`Base: ${fmtInt(g.votes)} eleitores` })
+      ]),
+      el("td", { class:"num", text: fmtInt(g.votes) }),
+      el("td", { class:"num", text: (baseShare*100).toFixed(2) + "%" }),
+      el("td", {}, [turnoutBox]),
+      el("td", {}, [prefWrap])
+    ]);
 
-      input.addEventListener("blur", () => {
-        const v = clampInt(parseFloat(input.value));
-        state[cell.id][cand.key] = v;
-        input.value = String(v);
-        update();
-      });
-
-      const td = el("td");
-      td.appendChild(input);
-      tr.appendChild(td);
-    });
-
-    tr.appendChild(el("td", { class:"num", id:`sum_${cell.id}` }));
     tbody.appendChild(tr);
-  });
 
-  // TOTAL row (running weighted totals, real-time)
-  const totalTr = el("tr", { class: "totalrow", id: "totalRow" });
-  totalTr.appendChild(el("td", { html: "Total ponderado", colspan: "4" }));
+    // wiring
+    const turn = turnoutBox.querySelector(`#turn_${g.key}`);
+    const turnNum = turnoutBox.querySelector(`#turn_num_${g.key}`);
+    turnNum.value = String(state[g.key].turnout);
 
-  CANDIDATES.forEach((cand) => {
-    totalTr.appendChild(el("td", { class: "num", id: `tot_${cand.key}`, html: "<span class='muted'>0.0%</span>" }));
-  });
+    turn.addEventListener("input", () => {
+      state[g.key].turnout = clampInt(parseFloat(turn.value));
+      turnNum.value = String(state[g.key].turnout);
+      refreshSummary();
+    });
+    const commitTurnNum = () => {
+      state[g.key].turnout = clampInt(parseFloat(turnNum.value));
+      turn.value = String(state[g.key].turnout);
+      turnNum.value = String(state[g.key].turnout);
+      refreshSummary();
+    };
+    turnNum.addEventListener("change", commitTurnNum);
+    turnNum.addEventListener("blur", commitTurnNum);
 
-  totalTr.appendChild(el("td", { class: "num", id: "tot_sum", html: "<span class='muted'>0.0%</span>" }));
-  tbody.appendChild(totalTr);
+    // preference numeric (AV %)
+    const bNum = prefWrap.querySelector(`#b_num_${g.key}`);
+    bNum.value = String(state[g.key].shareB);
+    const commitBNum = () => {
+      state[g.key].shareB = clampInt(parseFloat(bNum.value));
+      bNum.value = String(state[g.key].shareB);
+      refreshGroup(g.key);
+      refreshSummary();
+    };
+    bNum.addEventListener("change", commitBNum);
+    bNum.addEventListener("blur", commitBNum);
+
+    // drag handle
+    const handle = prefWrap.querySelector(`#handle_${g.key}`);
+    attachPreferenceDrag(handle, g.key);
+  }
 
   table.appendChild(tbody);
   app.appendChild(table);
 
-  app.appendChild(el("div", {
-    class:"small",
-    html: "Nota: “Ensino Pós-Secundário” = Bacharelato/Ensino Médio ou Licenciatura+ (categorias 6 ou 7). “Não quer responder” foi excluído dos pesos."
-  }));
+  refreshAllGroups();
+  refreshSummary();
 }
 
-function updateRowSumsAndHighlight() {
-  let badRows = [];
-  for (const cell of CELLS) {
-    const s = rowSum(cell.id);
-    const sumEl = document.getElementById(`sum_${cell.id}`);
-    const rowEl = document.getElementById(`row_${cell.id}`);
+function refreshGroup(groupKey){
+  const shareB = state[groupKey].shareB;     // AV
+  const shareA = 100 - shareB;              // AJS
 
-    const ok = (s === 100);
-    if (sumEl) {
-      sumEl.textContent = s + "%";
-      sumEl.className = "num " + (ok ? "sumok" : "sumbad");
-    }
-    if (rowEl) rowEl.classList.toggle("rowbad", !ok);
-    if (!ok) badRows.push({ cell, sum: s });
+  const segA = document.getElementById(`segA_${groupKey}`);
+  const segB = document.getElementById(`segB_${groupKey}`);
+  if (segA && segB){
+    segA.style.width = `${shareA}%`;
+    segB.style.width = `${shareB}%`;
   }
 
-  const validation = document.getElementById("validation");
-  if (badRows.length > 0) {
-    validation.style.display = "block";
-    const items = badRows.map(r =>
-      `<li><strong>${r.cell.age}</strong> · ${r.cell.gender} · ${r.cell.edu}: soma = ${r.sum}%</li>`
-    ).join("");
-    validation.innerHTML = `
-      <div><strong>Corrigir antes de obter o resultado:</strong> cada linha tem de somar 100% (valores inteiros).</div>
-      <ul style="margin:8px 0 0 20px;">${items}</ul>
-    `;
-  } else {
-    validation.style.display = "none";
-    validation.innerHTML = "";
+  const bar = document.getElementById(`pref_bar_${groupKey}`);
+  const handle = document.getElementById(`handle_${groupKey}`);
+  if (bar && handle){
+    const w = bar.getBoundingClientRect().width;
+    // handle at boundary after AJS segment
+    const x = (w * shareA / 100);
+    handle.style.left = `${x}px`;
+  }
+
+  const bNum = document.getElementById(`b_num_${groupKey}`);
+  if (bNum && document.activeElement !== bNum){
+    bNum.value = String(shareB);
   }
 }
 
-function renderTotalsRow(totals) {
-  let sum = 0;
-  CANDIDATES.forEach((cand) => {
-    const v = totals[cand.key] * 100;
-    sum += v;
-    const cell = document.getElementById(`tot_${cand.key}`);
-    if (cell) cell.innerHTML = `${v.toFixed(1)}%`;
-  });
-  const sEl = document.getElementById("tot_sum");
-  if (sEl) sEl.innerHTML = `${sum.toFixed(1)}%`;
+function refreshAllGroups(){
+  for (const g of GROUPS) refreshGroup(g.key);
 }
 
-function renderBar(overallOrRunning) {
-  const bar = document.getElementById("overallBar");
-  bar.innerHTML = "";
-  if (!overallOrRunning) return;
+function refreshSummary(){
+  const res = computeSecondRound();
+  const v = verdict(res);
 
-  CANDIDATES.forEach((c, idx) => {
-    const width = (overallOrRunning[c.key] * 100);
-    const seg = el("span", { class: `seg c${idx}`, style: `width:${Math.max(0, width).toFixed(4)}%` });
-    bar.appendChild(seg);
-  });
+  const aPct = res.shareA * 100;
+  const bPct = res.shareB * 100;
+
+  const summaryLine = document.getElementById("summaryLine");
+  summaryLine.innerHTML =
+    `${v.text} &nbsp;|&nbsp; ` +
+    `${FINAL_A.label}: <strong>${aPct.toFixed(1)}%</strong> (${fmtInt(Math.round(res.votesA))} votos) · ` +
+    `${FINAL_B.label}: <strong>${bPct.toFixed(1)}%</strong> (${fmtInt(Math.round(res.votesB))} votos)`;
+
+  const overallBar = document.getElementById("overallBar");
+  overallBar.innerHTML = "";
+  const segA = el("span", { class:"seg2A", style:`width:${aPct.toFixed(4)}%` });
+  const segB = el("span", { class:"seg2B", style:`width:${bPct.toFixed(4)}%` });
+  overallBar.appendChild(segA);
+  overallBar.appendChild(segB);
+
+  const turnoutLine = document.getElementById("turnoutLine");
+  const turnoutPctInscritos = INSCRITOS > 0 ? (res.totalVoters2 / INSCRITOS) : 0;
+  turnoutLine.innerHTML =
+    `Participação simulada (2.ª volta): <strong>${fmtInt(Math.round(res.totalVoters2))}</strong> eleitores ` +
+    `(${(turnoutPctInscritos*100).toFixed(1)}% dos inscritos).`;
 }
 
-function update() {
-  updateRowSumsAndHighlight();
-
-  // Always update running totals row
-  const running = computeRunningTotals();
-  renderTotalsRow(running);
-
-  // Verdict only if valid
-  const verdictEl = document.getElementById("verdict");
-  const overall = computeOverallIfValid();
-
-  if (!overall) {
-    verdictEl.innerHTML = "—";
-    renderBar(running);
-    return;
-  }
-
-  verdictEl.innerHTML = verdictFromOverall(overall);
-  renderBar(overall);
-}
-
+/* ---------------------------
+   BOOT
+--------------------------- */
 document.getElementById("resetBtn").addEventListener("click", () => {
-  initState20();
-  renderTable();
-  update();
+  initDefaults();
+  render();
 });
 
-// boot
-initState20();
-renderTable();
-update();
+initDefaults();
+render();
 </script>
 </body>
 </html>
