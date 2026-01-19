@@ -3,148 +3,479 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>2.ª Volta — Simulador de Transferências</title>
+  <title>2.ª Volta — Simulador de Transferências (Protótipo)</title>
   <style>
     :root{
-      --border:#ddd;
-      --bg:#fafafa;
+      /* Approximations of your palette */
+      --seguro:#1f7a3a;   /* green */
+      --ventura:#173a7a;  /* blue */
+      --ink:#111;
       --muted:#666;
-      --a:#4c78a8;   /* Seguro */
-      --b:#e45756;   /* Ventura */
+      --bg:#fafafa;
+      --card:#fff;
+      --border:#ddd;
+      --soft:#f2f2f2;
+      --shadow: 0 10px 28px rgba(0,0,0,.10);
+      --radius:14px;
     }
-    body{ font-family: system-ui, Arial, sans-serif; margin: 16px; max-width: 1100px; }
-    h1{ margin: 0 0 6px; font-size: 18px; }
-    .small{ color: var(--muted); font-size: 13px; line-height: 1.35; margin-top: 6px; }
-    .panel{
-      margin-top: 12px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      padding: 12px;
-      border-radius: 10px;
+
+    *{ box-sizing: border-box; }
+    body{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 0;
+      color: var(--ink);
+      background: #fff;
     }
-    .grid{
-      display: grid;
-      grid-template-columns: 1.15fr 1fr;
+    .wrap{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 14px 14px 110px;
+    }
+
+    /* Sticky header (mobile-first) */
+    .sticky{
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    .stickyInner{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 12px 14px 10px;
+    }
+    .titleRow{
+      display:flex;
       gap: 10px;
-      align-items: start;
+      align-items:flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
     }
-    @media (max-width: 860px){
-      .grid{ grid-template-columns: 1fr; }
+    h1{
+      font-size: 16px;
+      margin: 0;
+      letter-spacing: .1px;
+    }
+    .subtle{
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.35;
+      margin-top: 4px;
+      max-width: 70ch;
     }
 
-    table{ width: 100%; border-collapse: collapse; margin-top: 12px; }
-    th, td{ border: 1px solid var(--border); padding: 10px; vertical-align: top; }
-    th{ background: #f6f6f6; text-align: left; font-size: 13px; }
-    td{ font-size: 13px; }
-    .num{ text-align: right; white-space: nowrap; }
-    .name{ font-weight: 700; }
-    .meta{ color: var(--muted); font-size: 12px; margin-top: 4px; }
-
-    .controlTitle{ font-weight: 700; margin-bottom: 6px; }
-    .rowControls{ display: grid; grid-template-columns: 1fr; gap: 10px; }
-
-    /* Single slider bar (turnout) */
-    .barWrap{ display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
-    input[type="range"]{ width: 100%; }
-    .pctBox{
-      width: 72px;
-      display: flex;
-      gap: 6px;
-      align-items: center;
-      justify-content: flex-end;
+    /* Result hero */
+    .hero{
+      margin-top: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      background: var(--bg);
+    }
+    .winnerLine{
+      font-size: 14px;
+      font-weight: 800;
+      margin: 0 0 6px;
+    }
+    .scoreLine{
+      font-size: 13px;
+      margin: 0;
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: baseline;
+    }
+    .scoreLine strong{ font-weight: 800; }
+    .pill{
+      display:inline-flex;
+      gap: 8px;
+      align-items:center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 12px;
+      color: var(--muted);
       white-space: nowrap;
     }
-    .pctBox input{
-      width: 52px;
-      text-align: right;
-      padding: 4px 6px;
-      font-size: 13px;
+    .dot{
+      width:10px; height:10px;
+      border-radius:50%;
+      display:inline-block;
     }
+    .dotS{ background: var(--seguro); }
+    .dotV{ background: var(--ventura); }
 
-    /* Two-way segmented bar (Seguro vs Ventura) */
-    .segbar{
-      position: relative;
-      height: 22px;
-      border-radius: 10px;
+    .barBig{
+      height: 14px;
+      border-radius: 999px;
       overflow: hidden;
       border: 1px solid var(--border);
-      background: #eee;
-      touch-action: none;
-      display: flex;
+      background: #e8e8e8;
+      margin-top: 10px;
+      display:flex;
     }
-    .segA{ background: var(--a); height: 100%; }
-    .segB{ background: var(--b); height: 100%; }
+    .barBig .a{ background: var(--seguro); height: 100%; }
+    .barBig .b{ background: var(--ventura); height: 100%; }
+
+    /* Top buttons */
+    .topBtns{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    button{
+      font-size: 13px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+    }
+    button:hover{ background: #f8f8f8; }
+    button.primary{
+      background: #111;
+      color: #fff;
+      border-color: #111;
+    }
+    button.primary:hover{ background: #000; }
+    button.ghost{
+      background: transparent;
+    }
+
+    /* Cards */
+    .cards{
+      display:flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .card{
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: 0 1px 0 rgba(0,0,0,.02);
+      padding: 12px;
+    }
+    .cardHead{
+      display:flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items:flex-start;
+      flex-wrap: wrap;
+    }
+    .cardTitle{
+      font-weight: 800;
+      font-size: 14px;
+      margin: 0;
+    }
+    .cardMeta{
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .basePill{
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    /* Controls layout */
+    .controls{
+      margin-top: 10px;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .ctrlLabel{
+      display:flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items:center;
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .ctrlLabel strong{
+      color: var(--ink);
+      font-weight: 800;
+      font-size: 12.5px;
+    }
+
+    /* Turnout slider */
+    .turnoutRow{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items:center;
+    }
+    input[type="range"]{
+      width: 100%;
+      height: 28px; /* helps touch */
+    }
+    .numBox{
+      display:flex;
+      gap: 6px;
+      align-items:center;
+      justify-content:flex-end;
+      white-space: nowrap;
+    }
+    .numBox input{
+      width: 58px;
+      padding: 6px 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      text-align:right;
+    }
+
+    /* Composite bar: length = turnout, internal split = AJS/AV */
+    .compositeWrap{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+    }
+    .track{
+      position: relative;
+      flex: 1 1 auto;
+      height: 26px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #f0f0f0;
+      overflow: hidden;
+      touch-action: none;
+      min-width: 200px;
+    }
+    .active{
+      position:absolute;
+      left: 0; top: 0; bottom: 0;
+      display:flex;
+      border-radius: 999px;
+      overflow:hidden;
+    }
+    .active .a{ background: var(--seguro); height: 100%; }
+    .active .b{ background: var(--ventura); height: 100%; }
+
+    /* Larger touch handle */
     .handle{
-      position: absolute;
-      top: -6px;
-      width: 16px;
-      height: 34px;
+      position:absolute;
+      top: -10px;
+      width: 32px;
+      height: 46px;
+      transform: translateX(-16px);
       cursor: ew-resize;
       touch-action: none;
-      transform: translateX(-8px);
       background: rgba(0,0,0,0);
+    }
+    .handle::before{
+      content:"";
+      position:absolute;
+      left: 9px;
+      top: 12px;
+      width: 14px;
+      height: 22px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.9);
+      border: 1px solid rgba(0,0,0,.12);
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
     }
     .handle::after{
       content:"";
       position:absolute;
-      left: 7px; top: 8px;
-      width: 2px; height: 18px;
-      background: rgba(255,255,255,0.95);
-      box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+      left: 15px;
+      top: 18px;
+      width: 2px;
+      height: 10px;
+      background: rgba(0,0,0,.25);
       border-radius: 1px;
+      box-shadow: -4px 0 0 rgba(0,0,0,.18), 4px 0 0 rgba(0,0,0,.18);
+      opacity: .9;
     }
-    .legend{
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center; font-size: 12px; color: var(--muted);
-      margin-top: 6px;
-    }
-    .dot{ width:10px; height:10px; border-radius:50%; display:inline-block; margin-right:6px; }
-    .dotA{ background: var(--a); }
-    .dotB{ background: var(--b); }
 
-    .sticky{
-      position: sticky;
-      bottom: 10px;
-      margin-top: 14px;
+    .miniHint{
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .row2{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .chip{
+      display:inline-flex;
+      gap: 8px;
+      align-items:center;
+      padding: 5px 8px;
+      border-radius: 999px;
       border: 1px solid var(--border);
-      background: white;
+      background: #fff;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .chip strong{ color: var(--ink); font-weight: 800; }
+    .chip button{
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 999px;
+    }
+    .tinyBtns{
+      display:inline-flex;
+      gap: 6px;
+    }
+
+    /* Footer sticky actions (optional) */
+    .foot{
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 60;
+      background: rgba(255,255,255,.94);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border);
+    }
+    .footInner{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 10px 14px;
+      display:flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items:center;
+      flex-wrap: wrap;
+    }
+    .footInner .note{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+      max-width: 70ch;
+    }
+
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 86px;
+      transform: translateX(-50%);
+      background: #111;
+      color: #fff;
       padding: 10px 12px;
       border-radius: 12px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      font-size: 13px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+      max-width: min(520px, 92vw);
+      text-align: center;
     }
+    .toast.show{ opacity: 1; }
 
-    .winner{ font-weight: 800; }
-    .bar2{ height: 14px; background:#e6e6e6; border-radius: 8px; overflow:hidden; margin-top:10px; border: 1px solid var(--border); }
-    .seg2A{ background: var(--a); height: 100%; display:inline-block; }
-    .seg2B{ background: var(--b); height: 100%; display:inline-block; }
-
-    .btns{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; }
-    button{ font-size: 14px; padding: 8px 10px; }
+    details{
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      background: #fff;
+      margin-top: 12px;
+    }
+    summary{
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--ink);
+    }
+    details p{
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.45;
+    }
   </style>
 </head>
 <body>
-  <h1>2.ª Volta — Simulador de Transferências (AJS vs AV)</h1>
-  <div class="small">
-    Para cada grupo (definido pelo comportamento na 1.ª volta), indique:
-    (i) que percentagem volta a votar na 2.ª volta; (ii) entre os que votam, a divisão entre António José Seguro e André Ventura.
-    <br/>
-    Nota: aqui assume-se que quem vota na 2.ª volta escolhe um dos dois (sem branco/nulos na simulação).
-  </div>
-
-  <div class="btns">
-    <button id="resetBtn" type="button">Repor valores iniciais</button>
-  </div>
-
-  <div id="app"></div>
 
   <div class="sticky">
-    <div id="summaryLine"></div>
-    <div class="bar2" id="overallBar"></div>
-    <div class="small" id="turnoutLine" style="margin-top:8px;"></div>
+    <div class="stickyInner">
+      <div class="titleRow">
+        <div>
+          <h1>Simulador de transferências — 2.ª volta (Seguro vs Ventura)</h1>
+          <div class="subtle">
+            Ajuste, para cada grupo de eleitores da 1.ª volta, a participação na 2.ª volta e a divisão do voto válido entre os dois finalistas.
+          </div>
+        </div>
+        <div class="topBtns">
+          <button class="ghost" id="btnInfo">Ajuda</button>
+          <button id="btnCopy" class="primary">Copiar link</button>
+        </div>
+      </div>
+
+      <div class="hero">
+        <div class="winnerLine" id="winnerLine">—</div>
+        <div class="scoreLine">
+          <span class="pill"><span class="dot dotS"></span><span id="scoreA">—</span></span>
+          <span class="pill"><span class="dot dotV"></span><span id="scoreB">—</span></span>
+          <span class="pill">Participação (simulada): <strong id="turnout2">—</strong></span>
+        </div>
+        <div class="barBig" aria-label="Resultado agregado">
+          <span class="a" id="barBigA" style="width:50%"></span>
+          <span class="b" id="barBigB" style="width:50%"></span>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <div class="wrap">
+    <div class="topBtns" style="justify-content:flex-start; margin-top: 14px;">
+      <button id="presetNeutral">Neutro (inicial)</button>
+      <button id="presetAntiAV">Cenário: anti-Ventura</button>
+      <button id="presetMobilize">Cenário: mobilizar não-voto</button>
+      <button id="resetAll">Repor</button>
+    </div>
+
+    <details id="helpBox">
+      <summary>O que isto faz (nota editorial)</summary>
+      <p>
+        Os grupos são definidos pelo comportamento na 1.ª volta. Para cada grupo, escolhe-se (i) a percentagem que volta a votar na 2.ª volta; e
+        (ii) entre os que votam, a divisão do voto válido entre os dois finalistas.
+        Neste protótipo assume-se que, quem vota na 2.ª volta, escolhe um dos dois (sem branco/nulo na simulação). O objetivo é explorar cenários, não prever resultados.
+      </p>
+    </details>
+
+    <div class="cards" id="cards"></div>
+  </div>
+
+  <div class="foot">
+    <div class="footInner">
+      <div class="note">
+        Dica: use os botões +/– para ajustes finos. O link copiado guarda o estado atual dos controlos (útil para discussão editorial).
+      </div>
+      <div class="topBtns">
+        <button id="btnResetToNeutral">Voltar ao neutro</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Link copiado.</div>
 
 <script>
 /* ---------------------------
-   INPUT: 1.ª volta (dados do utilizador)
+   DATA: 1.ª volta (base para transferências)
+   (Usando os valores fornecidos pelo utilizador)
 --------------------------- */
 const INSCRITOS = 11017202;
 const VOTANTES_1V = 5767057;
@@ -155,29 +486,34 @@ const GROUPS = [
   { key:"jcf", name:"João Cotrim de Figueiredo", votes:902571 },
   { key:"hgm", name:"Henrique Gouveia e Melo", votes:695091 },
   { key:"lmm", name:"Luís Marques Mendes", votes:637394 },
-  { key:"outros", name:"Outros", votes: 323842 }, // Catarina, AF, MJV, JP, APS, HC
-  // Abstenção + branco + nulos (1.ª volta)
-  { key:"abst", name:"Abstenção, branco e nulos", votes: (INSCRITOS - VOTANTES_1V) + 61226 + 65381 }
+  { key:"left_other", name:"Esquerda + Outros", votes: (116303 + 92589 + 60899 + 38536 + 10893 + 4622) },
+  { key:"abst", name:"Abstenção, brancos e nulos", votes: (INSCRITOS - VOTANTES_1V) + 61226 + 65381 }
 ];
 
-// Two finalists
-const FINAL_A = { key:"AJS", label:"António José Seguro", color:"var(--a)" };
-const FINAL_B = { key:"AV",  label:"André Ventura",       color:"var(--b)" };
+const FINAL_A = { label:"António José Seguro", colorVar:"--seguro" };
+const FINAL_B = { label:"André Ventura",       colorVar:"--ventura" };
 
 /* ---------------------------
-   DEFAULTS (ajustáveis)
-   - Turnout: 100% para quem votou num candidato; 0% para abstenção/branco/nulos
-   - Preferência: grupos AJS/AV começam 100% no próprio; restantes 50/50
+   STATE
+   turnout: % do grupo que vota na 2.ª volta
+   shareB: % (entre os que votam) que escolhe Ventura; Seguro = 100 - shareB
 --------------------------- */
-let state = {}; // per group: { turnout: int 0..100, shareB: int 0..100 } where shareB is AV among voters; AJS = 100-shareB
+let state = {}; // { [key]: { turnout:int, shareB:int } }
 
-function initDefaults(){
+function clampInt(x){
+  if (Number.isNaN(x)) return 0;
+  x = Math.round(x);
+  return Math.max(0, Math.min(100, x));
+}
+function fmtPct1(x){ return x.toFixed(1) + "%"; }
+
+function initNeutral(){
   state = {};
   for (const g of GROUPS){
-    const votedCandidate = (g.key !== "abst");
-    const turnout = votedCandidate ? 100 : 0;
+    const isAbst = g.key === "abst";
+    const turnout = isAbst ? 0 : 100;
 
-    let shareB = 50; // AV
+    let shareB = 50;
     if (g.key === "av")  shareB = 100;
     if (g.key === "ajs") shareB = 0;
 
@@ -185,94 +521,304 @@ function initDefaults(){
   }
 }
 
+/* Presets for editorial exploration (not "prediction") */
+function presetAntiAV(){
+  // keep turnout same as neutral, shift non-finalists to Seguro
+  initNeutral();
+  for (const g of GROUPS){
+    if (g.key === "ajs") state[g.key].shareB = 0;
+    else if (g.key === "av") state[g.key].shareB = 100;
+    else state[g.key].shareB = 20; // 80% Seguro, 20% Ventura
+  }
+}
+function presetMobilize(){
+  initNeutral();
+  // bring some of the abst/branco/nulo into turnout + mild lean
+  state["abst"].turnout = 25;
+  state["abst"].shareB = 55;
+  // mild right drift among some centre-right groups
+  state["lmm"].shareB = 60;
+  state["hgm"].shareB = 55;
+}
+
 /* ---------------------------
-   HELPERS
+   URL STATE (shareable)
+--------------------------- */
+function encodeState(){
+  // compact: key=turnout-shareB;...
+  const parts = [];
+  for (const g of GROUPS){
+    const s = state[g.key];
+    parts.push(`${g.key}:${s.turnout}-${s.shareB}`);
+  }
+  return parts.join(";");
+}
+function decodeState(str){
+  const map = {};
+  const parts = (str || "").split(";").filter(Boolean);
+  for (const p of parts){
+    const [k, rest] = p.split(":");
+    if (!k || !rest) continue;
+    const [t, b] = rest.split("-").map(x => clampInt(parseFloat(x)));
+    map[k] = { turnout: t, shareB: b };
+  }
+  // apply only if all required keys exist
+  for (const g of GROUPS){
+    if (!map[g.key]) return false;
+  }
+  state = map;
+  return true;
+}
+function readFromURL(){
+  const hash = window.location.hash || "";
+  const m = hash.match(/state=([^&]+)/);
+  if (!m) return false;
+  try{
+    const raw = decodeURIComponent(m[1]);
+    return decodeState(raw);
+  }catch(e){
+    return false;
+  }
+}
+function writeToURL(){
+  const raw = encodeState();
+  const next = "state=" + encodeURIComponent(raw);
+  window.history.replaceState(null, "", "#" + next);
+}
+
+/* ---------------------------
+   COMPUTE AGGREGATE RESULT
+--------------------------- */
+function compute(){
+  let totalVoters2 = 0;
+  let votesA = 0;
+  let votesB = 0;
+
+  for (const g of GROUPS){
+    const t = state[g.key].turnout / 100;
+    const b = state[g.key].shareB / 100;
+    const a = 1 - b;
+
+    const participating = g.votes * t;
+    totalVoters2 += participating;
+
+    votesA += participating * a;
+    votesB += participating * b;
+  }
+
+  const totalValid = votesA + votesB;
+  const shareA = totalValid > 0 ? votesA / totalValid : 0.5;
+  const shareB = totalValid > 0 ? votesB / totalValid : 0.5;
+  const turnoutInscritos = INSCRITOS > 0 ? totalVoters2 / INSCRITOS : 0;
+
+  return { shareA, shareB, turnoutInscritos };
+}
+
+function renderHero(){
+  const r = compute();
+  const aPct = r.shareA * 100;
+  const bPct = r.shareB * 100;
+
+  const winner =
+    (aPct >= 51) ? FINAL_A.label :
+    (bPct >= 51) ? FINAL_B.label :
+    (aPct >= bPct) ? FINAL_A.label : FINAL_B.label;
+
+  const winnerLine = document.getElementById("winnerLine");
+  winnerLine.textContent = `Vencedor: ${winner}`;
+
+  document.getElementById("scoreA").innerHTML = `${FINAL_A.label}: <strong>${fmtPct1(aPct)}</strong>`;
+  document.getElementById("scoreB").innerHTML = `${FINAL_B.label}: <strong>${fmtPct1(bPct)}</strong>`;
+  document.getElementById("turnout2").textContent = fmtPct1(r.turnoutInscritos * 100);
+
+  document.getElementById("barBigA").style.width = aPct.toFixed(4) + "%";
+  document.getElementById("barBigB").style.width = bPct.toFixed(4) + "%";
+}
+
+/* ---------------------------
+   CARD UI
+   - Turnout slider + numeric + +/- nudge
+   - Composite bar: active length = turnout, handle adjusts split (shareB)
 --------------------------- */
 function el(tag, attrs={}, children=[]){
   const node = document.createElement(tag);
   for (const [k,v] of Object.entries(attrs)){
     if (k === "class") node.className = v;
-    else if (k === "html") node.innerHTML = v;
     else if (k === "text") node.textContent = v;
+    else if (k === "html") node.innerHTML = v;
     else node.setAttribute(k, v);
   }
   for (const c of children) node.appendChild(c);
   return node;
 }
-function clampInt(x){
-  if (Number.isNaN(x)) return 0;
-  x = Math.round(x);
-  return Math.max(0, Math.min(100, x));
-}
-function fmtInt(n){
-  return n.toLocaleString("pt-PT");
-}
-function pct(x, d=1){
-  return (x*100).toFixed(d) + "%";
+
+function baseShareOfInscritos(votes){
+  return votes / INSCRITOS;
 }
 
-/* ---------------------------
-   COMPUTE
---------------------------- */
-function computeSecondRound(){
-  let votesA = 0; // AJS
-  let votesB = 0; // AV
-  let totalVoters2 = 0;
+function buildCards(){
+  const cards = document.getElementById("cards");
+  cards.innerHTML = "";
 
   for (const g of GROUPS){
-    const turnout = state[g.key].turnout / 100;
-    const shareB = state[g.key].shareB / 100;
-    const shareA = 1 - shareB;
+    const baseShare = baseShareOfInscritos(g.votes) * 100;
 
-    const participating = g.votes * turnout;
-    totalVoters2 += participating;
+    const card = el("div", { class:"card", id:`card_${g.key}` });
 
-    votesA += participating * shareA;
-    votesB += participating * shareB;
+    const head = el("div", { class:"cardHead" }, [
+      el("div", {}, [
+        el("div", { class:"cardTitle", text: g.name }),
+        el("div", { class:"cardMeta", text: "Grupo de origem (1.ª volta)" })
+      ]),
+      el("div", { class:"basePill", html: `Base: <strong>${baseShare.toFixed(2)}%</strong> dos inscritos` })
+    ]);
+
+    const controls = el("div", { class:"controls" });
+
+    /* Turnout */
+    const turnoutLabel = el("div", { class:"ctrlLabel" }, [
+      el("span", { text: "Voltam a votar (2.ª volta)" }),
+      el("strong", { id:`turnout_read_${g.key}`, text: state[g.key].turnout + "%" })
+    ]);
+
+    const turnoutSlider = el("input", {
+      type:"range", min:"0", max:"100", step:"1",
+      value: String(state[g.key].turnout),
+      id:`turnout_${g.key}`,
+      "aria-label": `Participação na 2.ª volta — ${g.name}`
+    });
+
+    const turnoutNum = el("input", {
+      type:"number", min:"0", max:"100", step:"1", inputmode:"numeric",
+      value: String(state[g.key].turnout),
+      id:`turnout_num_${g.key}`,
+      "aria-label": `Participação (número) — ${g.name}`
+    });
+
+    const turnoutNudge = el("div", { class:"tinyBtns" }, [
+      el("button", { type:"button", text:"–", id:`turnout_minus_${g.key}` }),
+      el("button", { type:"button", text:"+", id:`turnout_plus_${g.key}` })
+    ]);
+
+    const turnoutRow = el("div", { class:"turnoutRow" }, [
+      turnoutSlider,
+      el("div", { class:"numBox" }, [turnoutNum, el("span",{text:"%"}), turnoutNudge])
+    ]);
+
+    /* Preference (composite) */
+    const prefLabel = el("div", { class:"ctrlLabel" }, [
+      el("span", { text: "Entre os que votam: Seguro vs Ventura" }),
+      el("strong", { id:`pref_read_${g.key}`, text: `Ventura ${state[g.key].shareB}%` })
+    ]);
+
+    const track = el("div", { class:"track", id:`track_${g.key}`, "aria-label": `Preferência — ${g.name}` });
+    const active = el("div", { class:"active", id:`active_${g.key}` });
+    const segA = el("div", { class:"a", id:`segA_${g.key}` });
+    const segB = el("div", { class:"b", id:`segB_${g.key}` });
+    active.appendChild(segA);
+    active.appendChild(segB);
+
+    const handle = el("div", { class:"handle", id:`handle_${g.key}`, role:"slider" });
+    track.appendChild(active);
+    track.appendChild(handle);
+
+    const prefNum = el("input", {
+      type:"number", min:"0", max:"100", step:"1", inputmode:"numeric",
+      value: String(state[g.key].shareB),
+      id:`pref_num_${g.key}`,
+      "aria-label": `Percentagem Ventura (dos que votam) — ${g.name}`
+    });
+
+    const prefNudge = el("div", { class:"tinyBtns" }, [
+      el("button", { type:"button", text:"–", id:`pref_minus_${g.key}` }),
+      el("button", { type:"button", text:"+", id:`pref_plus_${g.key}` })
+    ]);
+
+    const prefRow = el("div", { class:"compositeWrap" }, [
+      track,
+      el("div", { class:"numBox" }, [prefNum, el("span",{text:"% AV"}), prefNudge])
+    ]);
+
+    const hint = el("div", { class:"miniHint", html:
+      `A barra colorida representa os que votam na 2.ª volta (comprimento = participação). Dentro dela, arraste o marcador para ajustar a divisão do voto válido.`
+    });
+
+    const chips = el("div", { class:"row2" }, [
+      el("span", { class:"chip", html: `<span class="dot dotS"></span><strong>Seguro</strong> = ${100 - state[g.key].shareB}% (dos votantes)` }),
+      el("span", { class:"chip", html: `<span class="dot dotV"></span><strong>Ventura</strong> = ${state[g.key].shareB}% (dos votantes)` })
+    ]);
+
+    controls.appendChild(el("div", {}, [turnoutLabel, turnoutRow]));
+    controls.appendChild(el("div", {}, [prefLabel, prefRow, hint, chips]));
+
+    card.appendChild(head);
+    card.appendChild(controls);
+    cards.appendChild(card);
+
+    // wire events
+    wireTurnout(g.key);
+    wirePreference(g.key);
+    refreshCard(g.key);
   }
-
-  // normalize to valid shares among those who vote (should sum to 100)
-  const totalValid = votesA + votesB;
-  const shareA = totalValid > 0 ? votesA / totalValid : 0;
-  const shareB = totalValid > 0 ? votesB / totalValid : 0;
-
-  return { votesA, votesB, totalVoters2, totalValid, shareA, shareB };
 }
 
-function verdict(res){
-  // threshold: 50%+1 pp => >=51.0%
-  const aPct = res.shareA * 100;
-  const bPct = res.shareB * 100;
-  if (aPct >= 51.0){
-    return { text: `Candidato ganha: <span class="winner">${FINAL_A.label}</span> (${aPct.toFixed(1)}%).`, winner:"A" };
-  }
-  if (bPct >= 51.0){
-    return { text: `Candidato ganha: <span class="winner">${FINAL_B.label}</span> (${bPct.toFixed(1)}%).`, winner:"B" };
-  }
-  // If neither reaches 51, still a winner exists by >50; but user asked this rule explicitly.
-  // We'll still state "sem maioria absoluta" and show who is ahead.
-  const lead = (aPct >= bPct) ? FINAL_A.label : FINAL_B.label;
-  const leadPct = Math.max(aPct, bPct).toFixed(1);
-  return { text: `Sem maioria absoluta (50%+1pp). À frente: <span class="winner">${lead}</span> (${leadPct}%).`, winner:null };
+function wireTurnout(key){
+  const slider = document.getElementById(`turnout_${key}`);
+  const num = document.getElementById(`turnout_num_${key}`);
+  const minus = document.getElementById(`turnout_minus_${key}`);
+  const plus  = document.getElementById(`turnout_plus_${key}`);
+
+  const commit = (v) => {
+    const x = clampInt(v);
+    state[key].turnout = x;
+    slider.value = String(x);
+    if (document.activeElement !== num) num.value = String(x);
+    refreshCard(key);
+    renderHero();
+    writeToURL();
+  };
+
+  slider.addEventListener("input", () => commit(parseFloat(slider.value)));
+  num.addEventListener("change", () => commit(parseFloat(num.value)));
+  num.addEventListener("blur", () => commit(parseFloat(num.value)));
+
+  minus.addEventListener("click", () => commit(state[key].turnout - 1));
+  plus.addEventListener("click",  () => commit(state[key].turnout + 1));
 }
 
-/* ---------------------------
-   UI: segmented preference bar (AJS vs AV)
-   - one handle adjusting split; integer values
---------------------------- */
-function attachPreferenceDrag(handle, groupKey){
+function wirePreference(key){
+  const track = document.getElementById(`track_${key}`);
+  const handle = document.getElementById(`handle_${key}`);
+  const num = document.getElementById(`pref_num_${key}`);
+  const minus = document.getElementById(`pref_minus_${key}`);
+  const plus  = document.getElementById(`pref_plus_${key}`);
+
+  const commit = (v) => {
+    const x = clampInt(v);
+    state[key].shareB = x;
+    if (document.activeElement !== num) num.value = String(x);
+    refreshCard(key);
+    renderHero();
+    writeToURL();
+  };
+
+  num.addEventListener("change", () => commit(parseFloat(num.value)));
+  num.addEventListener("blur", () => commit(parseFloat(num.value)));
+  minus.addEventListener("click", () => commit(state[key].shareB - 1));
+  plus.addEventListener("click",  () => commit(state[key].shareB + 1));
+
+  // Drag handle (touch-friendly)
   let dragging = false;
   let startX = 0;
   let startShareB = 0;
-  let barWidth = 1;
+  let width = 1;
 
   const onDown = (e) => {
     e.preventDefault();
     dragging = true;
-    const bar = document.getElementById(`pref_bar_${groupKey}`);
-    barWidth = Math.max(1, bar.getBoundingClientRect().width);
+    width = Math.max(1, track.getBoundingClientRect().width);
     startX = (e.touches ? e.touches[0].clientX : e.clientX);
-    startShareB = state[groupKey].shareB;
+    startShareB = state[key].shareB;
 
     window.addEventListener("mousemove", onMove, { passive:false });
     window.addEventListener("mouseup", onUp, { passive:false });
@@ -285,12 +831,8 @@ function attachPreferenceDrag(handle, groupKey){
     e.preventDefault();
     const x = (e.touches ? e.touches[0].clientX : e.clientX);
     const dx = x - startX;
-    const delta = Math.round((dx / barWidth) * 100); // + => more AV
-    const newShareB = clampInt(startShareB + delta);
-
-    state[groupKey].shareB = newShareB;
-    refreshGroup(groupKey);
-    refreshSummary();
+    const delta = Math.round((dx / width) * 100); // + => more AV
+    commit(startShareB + delta);
   };
 
   const onUp = (e) => {
@@ -305,188 +847,128 @@ function attachPreferenceDrag(handle, groupKey){
 
   handle.addEventListener("mousedown", onDown, { passive:false });
   handle.addEventListener("touchstart", onDown, { passive:false });
+
+  // Tap track: jump handle to position
+  track.addEventListener("click", (e) => {
+    // Avoid if click begins on input/handle
+    if (e.target === handle) return;
+    const rect = track.getBoundingClientRect();
+    const rel = (e.clientX - rect.left) / rect.width; // 0..1
+    const shareA = clampInt(rel * 100); // boundary at AJS share
+    const shareB = 100 - shareA;
+    commit(shareB);
+  });
+}
+
+function refreshCard(key){
+  const turnout = state[key].turnout;
+  const shareB = state[key].shareB;
+  const shareA = 100 - shareB;
+
+  document.getElementById(`turnout_read_${key}`).textContent = turnout + "%";
+  document.getElementById(`pref_read_${key}`).textContent = `Ventura ${shareB}%`;
+
+  const track = document.getElementById(`track_${key}`);
+  const active = document.getElementById(`active_${key}`);
+  const segA = document.getElementById(`segA_${key}`);
+  const segB = document.getElementById(`segB_${key}`);
+  const handle = document.getElementById(`handle_${key}`);
+
+  // active width proportional to turnout
+  active.style.width = turnout + "%";
+
+  // split inside active based on share
+  segA.style.width = shareA + "%";
+  segB.style.width = shareB + "%";
+
+  // handle position at boundary between A and B within active area
+  const w = track.getBoundingClientRect().width || 1;
+  const activePx = w * (turnout / 100);
+  const boundaryPx = activePx * (shareA / 100);
+  handle.style.left = boundaryPx + "px";
+
+  // update chips
+  const chips = document.querySelector(`#card_${key} .row2`);
+  if (chips){
+    chips.innerHTML = `
+      <span class="chip"><span class="dot dotS"></span><strong>Seguro</strong> = ${shareA}% (dos votantes)</span>
+      <span class="chip"><span class="dot dotV"></span><strong>Ventura</strong> = ${shareB}% (dos votantes)</span>
+    `;
+  }
 }
 
 /* ---------------------------
-   RENDER
+   COPY LINK + TOAST
 --------------------------- */
-function render(){
-  const app = document.getElementById("app");
-  app.innerHTML = "";
-
-  const table = el("table");
-  const thead = el("thead");
-  thead.appendChild(el("tr", {}, [
-    el("th", { html:"Grupo (1.ª volta)" }),
-    el("th", { class:"num", html:"Votos/Eleitores (base)" }),
-    el("th", { class:"num", html:"% no total (base)" }),
-    el("th", { html:"2.ª volta — participação" }),
-    el("th", { html:"2.ª volta — escolha (AJS vs AV)" })
-  ]));
-  table.appendChild(thead);
-
-  const tbody = el("tbody");
-  for (const g of GROUPS){
-    const baseShare = g.votes / INSCRITOS;
-
-    const turnoutBox = el("div", { class:"barWrap" }, [
-      el("input", {
-        type:"range", min:"0", max:"100", step:"1",
-        id:`turn_${g.key}`,
-        value: String(state[g.key].turnout)
-      }),
-      el("div", { class:"pctBox" }, [
-        el("input", { type:"number", min:"0", max:"100", step:"1", inputmode:"numeric", id:`turn_num_${g.key}` }),
-        el("span", { text:"%" })
-      ])
-    ]);
-
-    const prefWrap = el("div", {}, []);
-    const segbar = el("div", { class:"segbar", id:`pref_bar_${g.key}` }, [
-      el("div", { class:"segA", id:`segA_${g.key}` }),
-      el("div", { class:"segB", id:`segB_${g.key}` }),
-      el("div", { class:"handle", id:`handle_${g.key}` })
-    ]);
-    const legend = el("div", { class:"legend" }, [
-      el("span", { html:`<span class="dot dotA"></span>${FINAL_A.label}` }),
-      el("span", { html:`<span class="dot dotB"></span>${FINAL_B.label}` })
-    ]);
-
-    const prefNums = el("div", { class:"barWrap", style:"margin-top:8px;" }, [
-      el("div", { style:"width:100%;" , class:"small", html:"(entre os que votam na 2.ª volta)" }),
-      el("div", { class:"pctBox" }, [
-        el("input", { type:"number", min:"0", max:"100", step:"1", inputmode:"numeric", id:`b_num_${g.key}` }),
-        el("span", { text:"% AV" })
-      ])
-    ]);
-
-    prefWrap.appendChild(segbar);
-    prefWrap.appendChild(legend);
-    prefWrap.appendChild(prefNums);
-
-    const tr = el("tr", { id:`row_${g.key}` }, [
-      el("td", {}, [
-        el("div", { class:"name", text:g.name }),
-        el("div", { class:"meta", text:`Base: ${fmtInt(g.votes)} eleitores` })
-      ]),
-      el("td", { class:"num", text: fmtInt(g.votes) }),
-      el("td", { class:"num", text: (baseShare*100).toFixed(2) + "%" }),
-      el("td", {}, [turnoutBox]),
-      el("td", {}, [prefWrap])
-    ]);
-
-    tbody.appendChild(tr);
-
-    // wiring
-    const turn = turnoutBox.querySelector(`#turn_${g.key}`);
-    const turnNum = turnoutBox.querySelector(`#turn_num_${g.key}`);
-    turnNum.value = String(state[g.key].turnout);
-
-    turn.addEventListener("input", () => {
-      state[g.key].turnout = clampInt(parseFloat(turn.value));
-      turnNum.value = String(state[g.key].turnout);
-      refreshSummary();
-    });
-    const commitTurnNum = () => {
-      state[g.key].turnout = clampInt(parseFloat(turnNum.value));
-      turn.value = String(state[g.key].turnout);
-      turnNum.value = String(state[g.key].turnout);
-      refreshSummary();
-    };
-    turnNum.addEventListener("change", commitTurnNum);
-    turnNum.addEventListener("blur", commitTurnNum);
-
-    // preference numeric (AV %)
-    const bNum = prefWrap.querySelector(`#b_num_${g.key}`);
-    bNum.value = String(state[g.key].shareB);
-    const commitBNum = () => {
-      state[g.key].shareB = clampInt(parseFloat(bNum.value));
-      bNum.value = String(state[g.key].shareB);
-      refreshGroup(g.key);
-      refreshSummary();
-    };
-    bNum.addEventListener("change", commitBNum);
-    bNum.addEventListener("blur", commitBNum);
-
-    // drag handle
-    const handle = prefWrap.querySelector(`#handle_${g.key}`);
-    attachPreferenceDrag(handle, g.key);
-  }
-
-  table.appendChild(tbody);
-  app.appendChild(table);
-
-  refreshAllGroups();
-  refreshSummary();
-}
-
-function refreshGroup(groupKey){
-  const shareB = state[groupKey].shareB;     // AV
-  const shareA = 100 - shareB;              // AJS
-
-  const segA = document.getElementById(`segA_${groupKey}`);
-  const segB = document.getElementById(`segB_${groupKey}`);
-  if (segA && segB){
-    segA.style.width = `${shareA}%`;
-    segB.style.width = `${shareB}%`;
-  }
-
-  const bar = document.getElementById(`pref_bar_${groupKey}`);
-  const handle = document.getElementById(`handle_${groupKey}`);
-  if (bar && handle){
-    const w = bar.getBoundingClientRect().width;
-    // handle at boundary after AJS segment
-    const x = (w * shareA / 100);
-    handle.style.left = `${x}px`;
-  }
-
-  const bNum = document.getElementById(`b_num_${groupKey}`);
-  if (bNum && document.activeElement !== bNum){
-    bNum.value = String(shareB);
+async function copyLink(){
+  writeToURL();
+  const url = window.location.href;
+  try{
+    await navigator.clipboard.writeText(url);
+    showToast("Link copiado.");
+  }catch(e){
+    // fallback
+    const ta = document.createElement("textarea");
+    ta.value = url;
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand("copy"); showToast("Link copiado."); }
+    catch(err){ showToast("Não foi possível copiar automaticamente."); }
+    document.body.removeChild(ta);
   }
 }
-
-function refreshAllGroups(){
-  for (const g of GROUPS) refreshGroup(g.key);
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 1600);
 }
 
-function refreshSummary(){
-  const res = computeSecondRound();
-  const v = verdict(res);
+/* ---------------------------
+   CONTROLS
+--------------------------- */
+document.getElementById("btnCopy").addEventListener("click", copyLink);
+document.getElementById("btnInfo").addEventListener("click", () => {
+  const d = document.getElementById("helpBox");
+  d.open = !d.open;
+  d.scrollIntoView({ behavior:"smooth", block:"start" });
+});
 
-  const aPct = res.shareA * 100;
-  const bPct = res.shareB * 100;
-
-  const summaryLine = document.getElementById("summaryLine");
-  summaryLine.innerHTML =
-    `${v.text} &nbsp;|&nbsp; ` +
-    `${FINAL_A.label}: <strong>${aPct.toFixed(1)}%</strong> (${fmtInt(Math.round(res.votesA))} votos) · ` +
-    `${FINAL_B.label}: <strong>${bPct.toFixed(1)}%</strong> (${fmtInt(Math.round(res.votesB))} votos)`;
-
-  const overallBar = document.getElementById("overallBar");
-  overallBar.innerHTML = "";
-  const segA = el("span", { class:"seg2A", style:`width:${aPct.toFixed(4)}%` });
-  const segB = el("span", { class:"seg2B", style:`width:${bPct.toFixed(4)}%` });
-  overallBar.appendChild(segA);
-  overallBar.appendChild(segB);
-
-  const turnoutLine = document.getElementById("turnoutLine");
-  const turnoutPctInscritos = INSCRITOS > 0 ? (res.totalVoters2 / INSCRITOS) : 0;
-  turnoutLine.innerHTML =
-    `Participação simulada (2.ª volta): <strong>${fmtInt(Math.round(res.totalVoters2))}</strong> eleitores ` +
-    `(${(turnoutPctInscritos*100).toFixed(1)}% dos inscritos).`;
-}
+document.getElementById("presetNeutral").addEventListener("click", () => {
+  initNeutral(); buildCards(); renderHero(); writeToURL(); showToast("Neutro aplicado.");
+});
+document.getElementById("presetAntiAV").addEventListener("click", () => {
+  presetAntiAV(); buildCards(); renderHero(); writeToURL(); showToast("Cenário aplicado.");
+});
+document.getElementById("presetMobilize").addEventListener("click", () => {
+  presetMobilize(); buildCards(); renderHero(); writeToURL(); showToast("Cenário aplicado.");
+});
+document.getElementById("resetAll").addEventListener("click", () => {
+  initNeutral(); buildCards(); renderHero(); writeToURL(); showToast("Reposto.");
+});
+document.getElementById("btnResetToNeutral").addEventListener("click", () => {
+  initNeutral(); buildCards(); renderHero(); writeToURL(); showToast("Neutro aplicado.");
+});
 
 /* ---------------------------
    BOOT
 --------------------------- */
-document.getElementById("resetBtn").addEventListener("click", () => {
-  initDefaults();
-  render();
-});
+(function boot(){
+  initNeutral();
+  const loaded = readFromURL();
+  if (!loaded) writeToURL();
+  buildCards();
+  renderHero();
 
-initDefaults();
-render();
+  // refresh handle positions after layout settle (mobile)
+  setTimeout(() => {
+    for (const g of GROUPS) refreshCard(g.key);
+  }, 50);
+
+  window.addEventListener("resize", () => {
+    for (const g of GROUPS) refreshCard(g.key);
+  });
+})();
 </script>
 </body>
 </html>
