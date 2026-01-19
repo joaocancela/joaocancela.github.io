@@ -440,7 +440,7 @@
   </div>
 
   <div class="wrap">
-<button id="btnResetToNeutral">Voltar ao neutro</button>
+    <div class="topBtns" style="justify-content:flex-start; margin-top: 14px;">
     </div>
 
     <details id="helpBox">
@@ -461,6 +461,9 @@
     <div class="footInner">
       <div class="note">
         Dica: usa os botões +/– para ajustes finos. O link copiado guarda o estado atual dos controlos (útil para discussão editorial).
+      </div>
+      <div class="topBtns">
+        <button id="btnResetToNeutral">Voltar ao neutro</button>
       </div>
     </div>
   </div>
@@ -517,6 +520,24 @@ function initNeutral(){
 }
 
 /* Presets for editorial exploration (not "prediction") */
+function presetAntiAV(){
+  // keep turnout same as neutral, shift non-finalists to Seguro
+  initNeutral();
+  for (const g of GROUPS){
+    if (g.key === "ajs") state[g.key].shareB = 0;
+    else if (g.key === "av") state[g.key].shareB = 100;
+    else state[g.key].shareB = 20; // 80% Seguro, 20% Ventura
+  }
+}
+function presetMobilize(){
+  initNeutral();
+  // bring some of the abst/branco/nulo into turnout + mild lean
+  state["abst"].turnout = 25;
+  state["abst"].shareB = 55;
+  // mild right drift among some centre-right groups
+  state["lmm"].shareB = 60;
+  state["hgm"].shareB = 55;
+}
 
 /* ---------------------------
    URL STATE (shareable)
@@ -902,16 +923,33 @@ function showToast(msg){
 }
 
 /* ---------------------------
-   CONTROLS
+   CONTROLS (defensive binding)
 --------------------------- */
-document.getElementById("btnCopy").addEventListener("click", copyLink);
-document.getElementById("btnInfo").addEventListener("click", () => {
-  const d = document.getElementById("helpBox");
+const byId = (id) => document.getElementById(id);
+
+const btnCopy = byId("btnCopy");
+if (btnCopy) btnCopy.addEventListener("click", copyLink);
+
+const btnInfo = byId("btnInfo");
+if (btnInfo) btnInfo.addEventListener("click", () => {
+  const d = byId("helpBox");
+  if (!d) return;presetNeutral
   d.open = !d.open;
   d.scrollIntoView({ behavior:"smooth", block:"start" });
 });
 
-document.getElementById("resetAll").addEventListener("click", () => {
+const resetAll = byId("resetAll");
+if (resetAll) resetAll.addEventListener("click", () => {
+  initNeutral();
+  buildCards();
+  renderHero();
+  writeToURL();
+  showToast("Reposto.");
+});
+
+/* Se ainda existir um botão no footer, liga-o ao mesmo reset */
+const btnResetToNeutral = byId("btnResetToNeutral");
+if (btnResetToNeutral) btnResetToNeutral.addEventListener("click", () => {
   initNeutral();
   buildCards();
   renderHero();
