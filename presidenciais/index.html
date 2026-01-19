@@ -442,8 +442,6 @@
   <div class="wrap">
     <div class="topBtns" style="justify-content:flex-start; margin-top: 14px;">
       <button id="presetNeutral">Neutro (inicial)</button>
-      <button id="presetAntiAV">Cenário: anti-Ventura</button>
-      <button id="presetMobilize">Cenário: mobilizar não-voto</button>
       <button id="resetAll">Repor</button>
     </div>
 
@@ -451,8 +449,8 @@
       <summary>O que é que isto faz?</summary>
       <p>
         Os grupos são definidos pelo comportamento na 1.ª volta. Para cada grupo, escolhe-se (i) a percentagem que volta/passa a votar na 2.ª volta; e
-        (ii) entre os que votam, a divisão do voto válido entre os dois candidatos.
-        Assume-se que, quem vota na 2.ª volta, escolhe um dos dois (sem branco/nulo na simulação). O objetivo é explorar cenários, não prever resultados.
+        (ii) entre os que votam nesse grupo, a divisão de votos entre os dois candidatos.
+        Assume-se que, quem vota na 2.ª volta, escolhe um dos dois (sem votos em branco branco/nulos na simulação). O objetivo é só explorar cenários e não prever resultados.
       </p>
     </details>
 
@@ -667,7 +665,7 @@ function buildCards(){
 
     const head = el("div", { class:"cardHead" }, [
       el("div", {}, [
-        el("div", { class:"cardTitle", text: g.name }),
+        el("div", { class:"cardTitle", text: g.name }),neutro
         el("div", { class:"cardMeta", text: "Grupo de origem (1.ª volta)" })
       ]),
       el("div", { class:"basePill", html: `Base: <strong>${baseShare.toFixed(2)}%</strong> dos inscritos` })
