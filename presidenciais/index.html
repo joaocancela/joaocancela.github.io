@@ -447,11 +447,11 @@
       <p>
         Os grupos são definidos em função do comportamento na 1.ª volta. Para cada grupo, escolhe-se (i) a percentagem que participa na 2.ª volta; e
         (ii) entre os que votam, a divisão do voto válido entre os dois candidatos.
-		O cenário base parte de três suposições: 1) todos os eleitores que votaram num dos dois candidatos que passaram à segunda votam de novo no mesmo candidato na segunda volta; 2)  os eleitores que votaram candidato que não passou á segunda volta participam todos e dividem-se ao meio; e 3) nenhum dos eleitores que se abstiveram, votaram em branco ou votaram nulo na primeira volta participa na segunda volta. Este cenário em si mesmo não é, de todo, plausível: por exemplo, é de esperar que boa parte dos eleitores que votaram em candidatos à esquerda de António José Seguro agora lhe confiem o seu voto. Contudo, este cenário base serve como ponto de partida a partir do qual se devem editar as percentagens de (i) participação e (ii) divisão de apoios a António José Seguro e André Ventura.</p>	
+		O cenário base parte de três suposições: 1) todos os eleitores que votaram num dos dois candidatos que passaram à segunda votam de novo no mesmo candidato na segunda volta; 2)  os eleitores que votaram candidato que não passou à segunda volta participam todos e dividem-se ao meio; e 3) nenhum dos eleitores que se abstiveram, votaram em branco ou votaram nulo na primeira volta participa na segunda volta. Este cenário em si mesmo não é, de todo, plausível: por exemplo, é de esperar que boa parte dos eleitores que votaram em candidatos à esquerda de António José Seguro agora lhe confiem o seu voto. Contudo, este cenário base serve como ponto de partida a partir do qual se devem editar as percentagens de (i) participação e (ii) divisão de apoios a António José Seguro e André Ventura.</p>	
 		<p>		
-        Os valores da participação dizem respeito aos totais globais, e não aos verificados exclusivamente em território nacional. E para simplificar, assume-se que quem vota na 2.ª volta escolhe mesmo um dos dois -- votos em branco/nulos não são tomados em conta na simulação. O objetivo desta página é permitir explorar cenários e não prever resultados.</p>
+        Os valores da participação dizem respeito aos totais globais, e não aos verificados exclusivamente em território nacional. E, para simplificar, assume-se que quem vota na 2.ª volta escolhe mesmo um dos dois -- votos em branco e nulos não são tomados em conta na simulação. O objetivo desta página é permitir explorar cenários e não prever resultados.</p>
 		<p>		
-		Créditos: João Cancela (NOVA FCSH), com o apoio do ChatGPT 5.2. Reportar bugs e sugestões para  <a href = mailto:joaocancela@fcsh.unl.pt> joaocancela@fcsh.unl.pt </a> ou <a href = https://www.x.com/joaoc> @joaoc </a> no twitter.      </p>
+		Créditos: João Cancela (NOVA FCSH), com o apoio do ChatGPT 5.2. Bugs e sugestões devem ser reportados para  <a href = mailto:joaocancela@fcsh.unl.pt> joaocancela@fcsh.unl.pt </a> ou <a href = https://www.x.com/joaoc> @joaoc </a> no twitter.      </p>
     </details>
 
 
@@ -461,7 +461,7 @@
   <div class="foot">
     <div class="footInner">
       <div class="note">
-        Dica: usa os botões +/– para ajustes finos. O link copiado guarda o estado atual dos controlos (útil para discussão editorial).
+        Dica: usa os botões +/– para ajustes finos. O link copiado guarda o estado atual dos controlos.
       </div>
       <div class="topBtns">
         <button id="btnResetToNeutral">Voltar ao ponto de partida</button>
@@ -739,7 +739,7 @@ function buildCards(){
     ]);
 
     const hint = el("div", { class:"miniHint", html:
-      `A barra colorida representa os que votam na 2.ª volta (comprimento = participação). Dentro dela, arraste o marcador para ajustar a divisão do voto válido.`
+      `A barra colorida representa os que votam na 2.ª volta (comprimento = participação). Dentro dela, arrasta o marcador para ajustar a divisão do voto válido.`
     });
 
     const chips = el("div", { class:"row2" }, [
