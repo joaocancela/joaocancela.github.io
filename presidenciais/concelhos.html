@@ -626,7 +626,6 @@ const GROUPS = [
    Ex.: [{ "concelho":"ÁGUEDA", "participacao":60.95, ... }, ...]
 --------------------------- */
 const MUNICIPIOS = [
-  [
   {
     "concelho": "ÁGUEDA",
     "participacao": 60.95,
@@ -4015,7 +4014,6 @@ const MUNICIPIOS = [
     "outros": 2.09,
     "concelho_key": "CORVO"
   }
-]
 
 ];
 
@@ -4249,8 +4247,8 @@ function renderMunicipios(){
 
   const results = MUNICIPIOS.map(computeMunicipioResult);
 
-  const topSeguro = [...results].sort((a,b) => b.ajs - a.ajs).slice(0,10);
-  const topVentura = [...results].sort((a,b) => b.av - a.av).slice(0,10);
+  const topSeguro  = results.slice().sort((a,b) => b.ajs - a.ajs).slice(0,10);
+  const topVentura = results.slice().sort((a,b) => b.av  - a.av ).slice(0,10);
 
   const top10SeguroEl = document.getElementById("top10Seguro");
   const top10VenturaEl = document.getElementById("top10Ventura");
@@ -4270,7 +4268,7 @@ function renderMunicipios(){
   const isOpen = allBox && !allBox.hidden;
 
   if (isOpen && allInner){
-    const all = [...results].sort((a,b) => (a.concelho_key || "").localeCompare(b.concelho_key || ""));
+	const all = results.slice().sort((a,b) => (a.concelho_key || "").localeCompare(b.concelho_key || ""));
     allInner.innerHTML = "";
     all.forEach(r => allInner.appendChild(buildMuniRow(r)));
   }
@@ -4619,7 +4617,6 @@ if (btnResetToNeutral) btnResetToNeutral.addEventListener("click", () => {
 
 const btnToggleAll = byId("btnToggleAll");
 if (btnToggleAll) btnToggleAll.addEventListener("click", toggleAllMunicipios);
-
 
 /* ---------------------------
    BOOT
