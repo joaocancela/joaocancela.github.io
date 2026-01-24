@@ -1,0 +1,4646 @@
+<!doctype html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simulador de resultados na 2.ª volta da eleição presidencial de 2026 (Seguro vs Ventura)</title>
+  <style>
+    :root{
+      /* Approximations of your palette */
+      --seguro:#1f7a3a;   /* green */
+      --ventura:#173a7a;  /* blue */
+      --ink:#111;
+      --muted:#666;
+      --bg:#fafafa;
+      --card:#fff;
+      --border:#ddd;
+      --soft:#f2f2f2;
+      --shadow: 0 10px 28px rgba(0,0,0,.10);
+      --radius:14px;
+    }
+
+    *{ box-sizing: border-box; }
+    body{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 0;
+      color: var(--ink);
+      background: #fff;
+    }
+    .wrap{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 14px 14px 110px;
+    }
+
+    /* Sticky header (mobile-first) */
+    .sticky{
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    .stickyInner{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 12px 14px 10px;
+    }
+    .titleRow{
+      display:flex;
+      gap: 10px;
+      align-items:flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    h1{
+      font-size: 16px;
+      margin: 0;
+      letter-spacing: .1px;
+    }
+    .subtle{
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.35;
+      margin-top: 4px;
+      max-width: 70ch;
+    }
+
+    /* Result hero */
+    .hero{
+      margin-top: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      background: var(--bg);
+    }
+    .winnerLine{
+      font-size: 14px;
+      font-weight: 800;
+      margin: 0 0 6px;
+    }
+    .scoreLine{
+      font-size: 13px;
+      margin: 0;
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: baseline;
+    }
+    .scoreLine strong{ font-weight: 800; }
+    .pill{
+      display:inline-flex;
+      gap: 8px;
+      align-items:center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .dot{
+      width:10px; height:10px;
+      border-radius:50%;
+      display:inline-block;
+    }
+    .dotS{ background: var(--seguro); }
+    .dotV{ background: var(--ventura); }
+
+    .barBig{
+      height: 14px;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #e8e8e8;
+      margin-top: 10px;
+      display:flex;
+    }
+    .barBig .a{ background: var(--seguro); height: 100%; }
+    .barBig .b{ background: var(--ventura); height: 100%; }
+
+    /* Top buttons */
+    .topBtns{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    button{
+      font-size: 13px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+    }
+    button:hover{ background: #f8f8f8; }
+    button.primary{
+      background: #111;
+      color: #fff;
+      border-color: #111;
+    }
+    button.primary:hover{ background: #000; }
+    button.ghost{
+      background: transparent;
+    }
+
+    /* Cards */
+    .cards{
+      display:flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .card{
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: 0 1px 0 rgba(0,0,0,.02);
+      padding: 12px;
+    }
+    .cardHead{
+      display:flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items:flex-start;
+      flex-wrap: wrap;
+    }
+    .cardTitle{
+      font-weight: 800;
+      font-size: 14px;
+      margin: 0;
+    }
+    .cardMeta{
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .basePill{
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    /* Controls layout */
+    .controls{
+      margin-top: 10px;
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .ctrlLabel{
+      display:flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items:center;
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .ctrlLabel strong{
+      color: var(--ink);
+      font-weight: 800;
+      font-size: 12.5px;
+    }
+
+    /* Turnout slider */
+    .turnoutRow{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items:center;
+    }
+    input[type="range"]{
+      width: 100%;
+      height: 28px; /* helps touch */
+    }
+    .numBox{
+      display:flex;
+      gap: 6px;
+      align-items:center;
+      justify-content:flex-end;
+      white-space: nowrap;
+    }
+    .numBox input{
+      width: 58px;
+      padding: 6px 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      text-align:right;
+    }
+
+    /* Composite bar: length = turnout, internal split = AJS/AV */
+    .compositeWrap{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+    }
+    .track{
+      position: relative;
+      flex: 1 1 auto;
+      height: 26px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #f0f0f0;
+      overflow: hidden;
+      touch-action: none;
+      min-width: 200px;
+    }
+    .active{
+      position:absolute;
+      left: 0; top: 0; bottom: 0;
+      display:flex;
+      border-radius: 999px;
+      overflow:hidden;
+    }
+    .active .a{ background: var(--seguro); height: 100%; }
+    .active .b{ background: var(--ventura); height: 100%; }
+
+    /* Larger touch handle */
+    .handle{
+      position:absolute;
+      top: -10px;
+      width: 32px;
+      height: 46px;
+      transform: translateX(-16px);
+      cursor: ew-resize;
+      touch-action: none;
+      background: rgba(0,0,0,0);
+    }
+    .handle::before{
+      content:"";
+      position:absolute;
+      left: 9px;
+      top: 12px;
+      width: 14px;
+      height: 22px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.9);
+      border: 1px solid rgba(0,0,0,.12);
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+    .handle::after{
+      content:"";
+      position:absolute;
+      left: 15px;
+      top: 18px;
+      width: 2px;
+      height: 10px;
+      background: rgba(0,0,0,.25);
+      border-radius: 1px;
+      box-shadow: -4px 0 0 rgba(0,0,0,.18), 4px 0 0 rgba(0,0,0,.18);
+      opacity: .9;
+    }
+
+    .miniHint{
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .row2{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .chip{
+      display:inline-flex;
+      gap: 8px;
+      align-items:center;
+      padding: 5px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .chip strong{ color: var(--ink); font-weight: 800; }
+    .chip button{
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 999px;
+    }
+    .tinyBtns{
+      display:inline-flex;
+      gap: 6px;
+    }
+
+    /* Footer sticky actions (optional) */
+    .foot{
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 60;
+      background: rgba(255,255,255,.94);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border);
+    }
+    .footInner{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 10px 14px;
+      display:flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items:center;
+      flex-wrap: wrap;
+    }
+    .footInner .note{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+      max-width: 70ch;
+    }
+
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 86px;
+      transform: translateX(-50%);
+      background: #111;
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+      max-width: min(520px, 92vw);
+      text-align: center;
+    }
+    .toast.show{ opacity: 1; }
+
+    details{
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      background: #fff;
+      margin-top: 12px;
+    }
+    summary{
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--ink);
+    }
+    details p{
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.45;
+    }
+	
+    /* ---------------------------
+       Municípios (Top 10 + ver todos)
+    --------------------------- */
+    .muniSection{
+      margin-top: 18px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 12px;
+    }
+    .muniSection h2{
+      font-size: 14px;
+      margin: 0 0 8px;
+      font-weight: 800;
+    }
+    .muniGrid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    @media (min-width: 760px){
+      .muniGrid{ grid-template-columns: 1fr 1fr; }
+    }
+    .muniCol h3{
+      font-size: 12.5px;
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-weight: 800;
+      letter-spacing: .1px;
+    }
+    .muniHeaderRow{
+      display:grid;
+      grid-template-columns: 1fr 64px 64px 74px;
+      gap: 8px;
+      align-items:center;
+      padding: 6px 8px;
+      border-radius: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .muniRow{
+      display:grid;
+      grid-template-columns: 1fr 64px 64px 74px;
+      gap: 8px;
+      align-items:center;
+      padding: 7px 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 12.5px;
+      margin-bottom: 6px;
+    }
+    .muniRow .name{
+      font-weight: 700;
+      color: var(--ink);
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .muniRow .num{
+      text-align:right;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+    }
+    .muniRow .num.muted{ color: var(--muted); font-weight: 700; }
+    .muniControls{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items:center;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+    .muniAll{
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .muniAllInner{
+      max-height: 52vh;
+      overflow:auto;
+      padding-right: 4px;
+    }
+
+	
+  </style>
+</head>
+<body>
+
+  <div class="sticky">
+    <div class="stickyInner">
+      <div class="titleRow">
+        <div>
+          <h1>Simulador de resultados na 2.ª volta da eleição presidencial de 2026 (Seguro vs Ventura)</h1>
+          <div class="subtle">
+            Ajusta, para cada grupo de eleitores da 1.ª volta, as estimativas das respectivas i) participação na 2.ª volta e ii) divisão dos votos válidos entre os dois candidatos que passaram à segunda volta.
+          </div>
+        </div>
+        <div class="topBtns">
+          <button id="btnCopy" class="primary">Copiar link</button>
+        </div>
+      </div>
+
+      <div class="hero">
+        <div class="winnerLine" id="winnerLine">—</div>
+        <div class="scoreLine">
+          <span class="pill"><span class="dot dotS"></span><span id="scoreA">—</span></span>
+          <span class="pill"><span class="dot dotV"></span><span id="scoreB">—</span></span>
+          <span class="pill">Participação (simulada): <strong id="turnout2">—</strong></span>
+        </div>
+        <div class="barBig" aria-label="Resultado agregado">
+          <span class="a" id="barBigA" style="width:50%"></span>
+          <span class="b" id="barBigB" style="width:50%"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="topBtns" style="justify-content:flex-start; margin-top: 14px;">
+    </div>
+
+    <details id="helpBox">
+      <summary>Como uso isto?</summary>
+      <p>
+        Os grupos são definidos em função do comportamento na 1.ª volta. Para cada grupo, escolhe-se (i) a percentagem que participa na 2.ª volta; e
+        (ii) entre os que votam, a divisão do voto válido entre os dois candidatos.
+		O cenário base parte de três suposições: 1) todos os eleitores que votaram num dos dois candidatos que passaram à segunda votam de novo no mesmo candidato na segunda volta; 2)  os eleitores que votaram candidato que não passou à segunda volta participam todos e dividem-se ao meio; e 3) nenhum dos eleitores que se abstiveram, votaram em branco ou votaram nulo na primeira volta participa na segunda volta. Este cenário de partida é claramente implausível: por exemplo, é de esperar que boa parte dos eleitores que votaram em candidatos à esquerda de António José Seguro agora lhe confiem o seu voto. Contudo, este cenário base serve como ponto de partida a partir do qual se devem editar as percentagens de (i) participação e (ii) divisão de apoios a António José Seguro e André Ventura.</p>	
+		<p>		
+        Os valores da participação dizem respeito aos totais globais, e não aos verificados exclusivamente em território nacional. Votaram <a href = https://www.presidenciais2026.mai.gov.pt/resultados/globais>52,4% do total de inscritos (incluindo recenseados no estrangeiro)</a>, e  <a href = https://www.presidenciais2026.mai.gov.pt/resultados/territorio-nacional> 61,5% dos recenseados em território nacional</a>. 
+		E, para simplificar, assume-se que quem vota na 2.ª volta escolhe mesmo um dos dois -- votos em branco e nulos não são tomados em conta na simulação. O objetivo desta página é permitir explorar cenários e não prever resultados.</p>
+		<p>		
+		Créditos: João Cancela (NOVA FCSH), com o apoio do ChatGPT 5.2. Bugs e sugestões devem ser reportados para  <a href = mailto:joaocancela@fcsh.unl.pt> joaocancela@fcsh.unl.pt </a> ou <a href = https://www.x.com/joaoc> @joaoc </a> no twitter.      </p>
+    </details>
+
+
+    <div class="cards" id="cards"></div>
+	
+    <!-- Municípios (Top 10 + ver todos) -->
+    <section class="muniSection" id="muniSection" hidden>
+      <h2>Resultados simulados por concelho</h2>
+
+      <div class="muniGrid">
+        <div class="muniCol">
+          <h3>Top 10 — Seguro</h3>
+          <div class="muniHeaderRow">
+            <div>Concelho</div><div style="text-align:right;">AJS</div><div style="text-align:right;">AV</div><div style="text-align:right;">Part.</div>
+          </div>
+          <div id="top10Seguro"></div>
+        </div>
+
+        <div class="muniCol">
+          <h3>Top 10 — Ventura</h3>
+          <div class="muniHeaderRow">
+            <div>Concelho</div><div style="text-align:right;">AJS</div><div style="text-align:right;">AV</div><div style="text-align:right;">Part.</div>
+          </div>
+          <div id="top10Ventura"></div>
+        </div>
+      </div>
+
+      <div class="muniControls">
+        <button id="btnToggleAll" class="ghost">Ver todos</button>
+        <div class="miniHint" id="muniNote">
+          Os valores são % do voto válido (AJS/AV) e % de participação (entre inscritos), recalculados em tempo real a partir dos controlos acima.
+        </div>
+      </div>
+
+      <div class="muniAll" id="muniAll" hidden>
+        <div class="muniHeaderRow" style="margin-bottom:10px;">
+          <div>Concelho</div><div style="text-align:right;">AJS</div><div style="text-align:right;">AV</div><div style="text-align:right;">Part.</div>
+        </div>
+        <div class="muniAllInner" id="muniAllInner"></div>
+      </div>
+    </section>
+
+	
+  </div>
+
+  <div class="foot">
+    <div class="footInner">
+      <div class="note">
+        Dica: usa os botões +/– para ajustes finos. O link copiado guarda o estado atual dos controlos.
+      </div>
+      <div class="topBtns">
+        <button id="btnResetToNeutral">Voltar ao ponto de partida</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Link copiado.</div>
+
+<script>
+/* ---------------------------
+   DATA: 1.ª volta (base para transferências)
+   (Usando os valores fornecidos pelo utilizador)
+--------------------------- */
+const INSCRITOS = 11017202;
+const VOTANTES_1V = 5767057;
+
+const GROUPS = [
+  { key:"ajs", name:"António José Seguro", votes:1754904 },
+  { key:"av",  name:"André Ventura", votes:1326648 },
+  { key:"jcf", name:"João Cotrim de Figueiredo", votes:902571 },
+  { key:"hgm", name:"Henrique Gouveia e Melo", votes:695091 },
+  { key:"lmm", name:"Luís Marques Mendes", votes:637394 },
+  { key:"left_other", name:"Catarina Martins, António Filipe, Manuel João Vieira, Jorge Pinto, André Pestana e Humberto Correia", votes: (116303 + 92589 + 60899 + 38536 + 10893 + 4622) },
+  { key:"abst", name:"Abstenção, em branco e nulos", votes: (INSCRITOS - VOTANTES_1V) + 61226 + 65381 }
+];
+
+/* ---------------------------
+   DATA: por concelho (1.ª volta)
+   COLAR JSON AQUI (array com ~308 objetos)
+   Ex.: [{ "concelho":"ÁGUEDA", "participacao":60.95, ... }, ...]
+--------------------------- */
+const MUNICIPIOS = [
+  [
+  {
+    "concelho": "ÁGUEDA",
+    "participacao": 60.95,
+    "ajs": 27.27,
+    "av": 25.49,
+    "jcf": 15.53,
+    "hgm": 13.39,
+    "mm": 14.84,
+    "outros": 3.48,
+    "concelho_key": "AGUEDA"
+  },
+  {
+    "concelho": "ALBERGARIA-A-VELHA",
+    "participacao": 61.19,
+    "ajs": 24.41,
+    "av": 27.69,
+    "jcf": 15.03,
+    "hgm": 13.17,
+    "mm": 15.71,
+    "outros": 3.99,
+    "concelho_key": "ALBERGARIA-A-VELHA"
+  },
+  {
+    "concelho": "ANADIA",
+    "participacao": 59.1,
+    "ajs": 25.28,
+    "av": 24.13,
+    "jcf": 15.1,
+    "hgm": 13.3,
+    "mm": 18.41,
+    "outros": 3.78,
+    "concelho_key": "ANADIA"
+  },
+  {
+    "concelho": "AROUCA",
+    "participacao": 62.66,
+    "ajs": 26.27,
+    "av": 21.59,
+    "jcf": 13.96,
+    "hgm": 13.57,
+    "mm": 20.91,
+    "outros": 3.7,
+    "concelho_key": "AROUCA"
+  },
+  {
+    "concelho": "AVEIRO",
+    "participacao": 63.41,
+    "ajs": 29.05,
+    "av": 19.85,
+    "jcf": 18.3,
+    "hgm": 15.09,
+    "mm": 12.43,
+    "outros": 5.28,
+    "concelho_key": "AVEIRO"
+  },
+  {
+    "concelho": "CASTELO DE PAIVA",
+    "participacao": 61.11,
+    "ajs": 36.38,
+    "av": 20.43,
+    "jcf": 12.01,
+    "hgm": 9.44,
+    "mm": 18.59,
+    "outros": 3.15,
+    "concelho_key": "CASTELO DE PAIVA"
+  },
+  {
+    "concelho": "ESPINHO",
+    "participacao": 64.28,
+    "ajs": 31.93,
+    "av": 18.29,
+    "jcf": 17.21,
+    "hgm": 12.52,
+    "mm": 14.33,
+    "outros": 5.72,
+    "concelho_key": "ESPINHO"
+  },
+  {
+    "concelho": "ESTARREJA",
+    "participacao": 57.76,
+    "ajs": 27.05,
+    "av": 25.95,
+    "jcf": 13.67,
+    "hgm": 15.04,
+    "mm": 14.13,
+    "outros": 4.16,
+    "concelho_key": "ESTARREJA"
+  },
+  {
+    "concelho": "SANTA MARIA DA FEIRA",
+    "participacao": 63.49,
+    "ajs": 30.01,
+    "av": 22.7,
+    "jcf": 17.05,
+    "hgm": 11.9,
+    "mm": 13.71,
+    "outros": 4.63,
+    "concelho_key": "SANTA MARIA DA FEIRA"
+  },
+  {
+    "concelho": "ÍLHAVO",
+    "participacao": 57.47,
+    "ajs": 25.96,
+    "av": 24.73,
+    "jcf": 17.84,
+    "hgm": 14.68,
+    "mm": 11.88,
+    "outros": 4.91,
+    "concelho_key": "ILHAVO"
+  },
+  {
+    "concelho": "MEALHADA",
+    "participacao": 59.47,
+    "ajs": 35.12,
+    "av": 21.01,
+    "jcf": 14.37,
+    "hgm": 13.13,
+    "mm": 11.01,
+    "outros": 5.36,
+    "concelho_key": "MEALHADA"
+  },
+  {
+    "concelho": "MURTOSA",
+    "participacao": 49.87,
+    "ajs": 20.37,
+    "av": 28.68,
+    "jcf": 13.25,
+    "hgm": 17.65,
+    "mm": 16.42,
+    "outros": 3.63,
+    "concelho_key": "MURTOSA"
+  },
+  {
+    "concelho": "OLIVEIRA DE AZEMÉIS",
+    "participacao": 62.73,
+    "ajs": 30.17,
+    "av": 22.8,
+    "jcf": 15.83,
+    "hgm": 12.24,
+    "mm": 15,
+    "outros": 3.96,
+    "concelho_key": "OLIVEIRA DE AZEMEIS"
+  },
+  {
+    "concelho": "OLIVEIRA DO BAIRRO",
+    "participacao": 60.39,
+    "ajs": 18.84,
+    "av": 28.8,
+    "jcf": 19.52,
+    "hgm": 11.85,
+    "mm": 17.99,
+    "outros": 3,
+    "concelho_key": "OLIVEIRA DO BAIRRO"
+  },
+  {
+    "concelho": "OVAR",
+    "participacao": 60.74,
+    "ajs": 32.37,
+    "av": 20.18,
+    "jcf": 15.72,
+    "hgm": 13.73,
+    "mm": 12.46,
+    "outros": 5.54,
+    "concelho_key": "OVAR"
+  },
+  {
+    "concelho": "SÃO JOÃO DA MADEIRA",
+    "participacao": 61.94,
+    "ajs": 35.31,
+    "av": 17.48,
+    "jcf": 17.79,
+    "hgm": 11.49,
+    "mm": 12.81,
+    "outros": 5.12,
+    "concelho_key": "SAO JOAO DA MADEIRA"
+  },
+  {
+    "concelho": "SEVER DO VOUGA",
+    "participacao": 66.29,
+    "ajs": 24.38,
+    "av": 24.12,
+    "jcf": 15.5,
+    "hgm": 11.64,
+    "mm": 20.5,
+    "outros": 3.86,
+    "concelho_key": "SEVER DO VOUGA"
+  },
+  {
+    "concelho": "VAGOS",
+    "participacao": 56.85,
+    "ajs": 16.57,
+    "av": 31.11,
+    "jcf": 17.54,
+    "hgm": 11.91,
+    "mm": 19.24,
+    "outros": 3.63,
+    "concelho_key": "VAGOS"
+  },
+  {
+    "concelho": "VALE DE CAMBRA",
+    "participacao": 65.11,
+    "ajs": 29.23,
+    "av": 22.48,
+    "jcf": 15.2,
+    "hgm": 12.79,
+    "mm": 16.3,
+    "outros": 4,
+    "concelho_key": "VALE DE CAMBRA"
+  },
+  {
+    "concelho": "ALJUSTREL",
+    "participacao": 58.84,
+    "ajs": 35.92,
+    "av": 29.72,
+    "jcf": 4.96,
+    "hgm": 10.06,
+    "mm": 3.2,
+    "outros": 16.14,
+    "concelho_key": "ALJUSTREL"
+  },
+  {
+    "concelho": "ALMODÔVAR",
+    "participacao": 58,
+    "ajs": 30.05,
+    "av": 34.22,
+    "jcf": 9.9,
+    "hgm": 10.44,
+    "mm": 9.99,
+    "outros": 5.4,
+    "concelho_key": "ALMODOVAR"
+  },
+  {
+    "concelho": "ALVITO",
+    "participacao": 62.76,
+    "ajs": 34.16,
+    "av": 27.74,
+    "jcf": 9.25,
+    "hgm": 14.3,
+    "mm": 5.22,
+    "outros": 9.33,
+    "concelho_key": "ALVITO"
+  },
+  {
+    "concelho": "BARRANCOS",
+    "participacao": 53.96,
+    "ajs": 33.13,
+    "av": 31.76,
+    "jcf": 9.31,
+    "hgm": 15.42,
+    "mm": 3.82,
+    "outros": 6.56,
+    "concelho_key": "BARRANCOS"
+  },
+  {
+    "concelho": "BEJA",
+    "participacao": 60.26,
+    "ajs": 31.47,
+    "av": 26.45,
+    "jcf": 13.42,
+    "hgm": 12.42,
+    "mm": 6.39,
+    "outros": 9.85,
+    "concelho_key": "BEJA"
+  },
+  {
+    "concelho": "CASTRO VERDE",
+    "participacao": 60.24,
+    "ajs": 35,
+    "av": 27.37,
+    "jcf": 9.53,
+    "hgm": 10.94,
+    "mm": 5.23,
+    "outros": 11.93,
+    "concelho_key": "CASTRO VERDE"
+  },
+  {
+    "concelho": "CUBA",
+    "participacao": 59.06,
+    "ajs": 37.91,
+    "av": 28.27,
+    "jcf": 8.6,
+    "hgm": 8.55,
+    "mm": 4.13,
+    "outros": 12.54,
+    "concelho_key": "CUBA"
+  },
+  {
+    "concelho": "FERREIRA DO ALENTEJO",
+    "participacao": 61.17,
+    "ajs": 37.74,
+    "av": 29.61,
+    "jcf": 7.45,
+    "hgm": 12.26,
+    "mm": 4,
+    "outros": 8.94,
+    "concelho_key": "FERREIRA DO ALENTEJO"
+  },
+  {
+    "concelho": "MÉRTOLA",
+    "participacao": 57.87,
+    "ajs": 38.38,
+    "av": 21.9,
+    "jcf": 5.98,
+    "hgm": 12.49,
+    "mm": 6.21,
+    "outros": 15.04,
+    "concelho_key": "MERTOLA"
+  },
+  {
+    "concelho": "MOURA",
+    "participacao": 54.1,
+    "ajs": 33.09,
+    "av": 37.63,
+    "jcf": 7.9,
+    "hgm": 8.56,
+    "mm": 4.17,
+    "outros": 8.65,
+    "concelho_key": "MOURA"
+  },
+  {
+    "concelho": "ODEMIRA",
+    "participacao": 58.81,
+    "ajs": 30.72,
+    "av": 29.04,
+    "jcf": 9.99,
+    "hgm": 14.55,
+    "mm": 6.59,
+    "outros": 9.11,
+    "concelho_key": "ODEMIRA"
+  },
+  {
+    "concelho": "OURIQUE",
+    "participacao": 59.19,
+    "ajs": 38.36,
+    "av": 26.08,
+    "jcf": 8.5,
+    "hgm": 9.9,
+    "mm": 11.17,
+    "outros": 5.99,
+    "concelho_key": "OURIQUE"
+  },
+  {
+    "concelho": "SERPA",
+    "participacao": 56.45,
+    "ajs": 35.95,
+    "av": 26.36,
+    "jcf": 7.74,
+    "hgm": 10.2,
+    "mm": 5.14,
+    "outros": 14.61,
+    "concelho_key": "SERPA"
+  },
+  {
+    "concelho": "VIDIGUEIRA",
+    "participacao": 59.13,
+    "ajs": 36.66,
+    "av": 31.59,
+    "jcf": 7.8,
+    "hgm": 9.86,
+    "mm": 4.91,
+    "outros": 9.18,
+    "concelho_key": "VIDIGUEIRA"
+  },
+  {
+    "concelho": "AMARES",
+    "participacao": 66.14,
+    "ajs": 27.66,
+    "av": 27.41,
+    "jcf": 16.13,
+    "hgm": 10.19,
+    "mm": 15.01,
+    "outros": 3.6,
+    "concelho_key": "AMARES"
+  },
+  {
+    "concelho": "BARCELOS",
+    "participacao": 69.55,
+    "ajs": 26.29,
+    "av": 24.8,
+    "jcf": 16.38,
+    "hgm": 12.6,
+    "mm": 16.23,
+    "outros": 3.7,
+    "concelho_key": "BARCELOS"
+  },
+  {
+    "concelho": "BRAGA",
+    "participacao": 67.81,
+    "ajs": 33.28,
+    "av": 19.66,
+    "jcf": 18.54,
+    "hgm": 11.77,
+    "mm": 11.94,
+    "outros": 4.81,
+    "concelho_key": "BRAGA"
+  },
+  {
+    "concelho": "CABECEIRAS DE BASTO",
+    "participacao": 56.08,
+    "ajs": 37.68,
+    "av": 20.2,
+    "jcf": 11.26,
+    "hgm": 7.44,
+    "mm": 20.3,
+    "outros": 3.12,
+    "concelho_key": "CABECEIRAS DE BASTO"
+  },
+  {
+    "concelho": "CELORICO DE BASTO",
+    "participacao": 57.81,
+    "ajs": 35.18,
+    "av": 19.82,
+    "jcf": 10.39,
+    "hgm": 8.43,
+    "mm": 22.09,
+    "outros": 4.09,
+    "concelho_key": "CELORICO DE BASTO"
+  },
+  {
+    "concelho": "ESPOSENDE",
+    "participacao": 65.27,
+    "ajs": 24.32,
+    "av": 24.09,
+    "jcf": 18.92,
+    "hgm": 12.01,
+    "mm": 16.27,
+    "outros": 4.39,
+    "concelho_key": "ESPOSENDE"
+  },
+  {
+    "concelho": "FAFE",
+    "participacao": 61,
+    "ajs": 28.2,
+    "av": 22.36,
+    "jcf": 9.4,
+    "hgm": 5.56,
+    "mm": 31.23,
+    "outros": 3.25,
+    "concelho_key": "FAFE"
+  },
+  {
+    "concelho": "GUIMARÃES",
+    "participacao": 69.26,
+    "ajs": 32.99,
+    "av": 20.56,
+    "jcf": 17.36,
+    "hgm": 10.09,
+    "mm": 14.12,
+    "outros": 4.88,
+    "concelho_key": "GUIMARAES"
+  },
+  {
+    "concelho": "PÓVOA DE LANHOSO",
+    "participacao": 61.98,
+    "ajs": 32.42,
+    "av": 26.92,
+    "jcf": 12.67,
+    "hgm": 8.33,
+    "mm": 16.86,
+    "outros": 2.8,
+    "concelho_key": "POVOA DE LANHOSO"
+  },
+  {
+    "concelho": "TERRAS DE BOURO",
+    "participacao": 60.76,
+    "ajs": 27.08,
+    "av": 29.5,
+    "jcf": 11.33,
+    "hgm": 10.99,
+    "mm": 17.65,
+    "outros": 3.45,
+    "concelho_key": "TERRAS DE BOURO"
+  },
+  {
+    "concelho": "VIEIRA DO MINHO",
+    "participacao": 57.76,
+    "ajs": 34.19,
+    "av": 24.87,
+    "jcf": 9.32,
+    "hgm": 8.67,
+    "mm": 20.04,
+    "outros": 2.91,
+    "concelho_key": "VIEIRA DO MINHO"
+  },
+  {
+    "concelho": "VILA NOVA DE FAMALICÃO",
+    "participacao": 69.2,
+    "ajs": 30.98,
+    "av": 22.25,
+    "jcf": 18.07,
+    "hgm": 11.76,
+    "mm": 13.15,
+    "outros": 3.79,
+    "concelho_key": "VILA NOVA DE FAMALICAO"
+  },
+  {
+    "concelho": "VILA VERDE",
+    "participacao": 62.84,
+    "ajs": 24.36,
+    "av": 29.02,
+    "jcf": 15.56,
+    "hgm": 10.12,
+    "mm": 17.45,
+    "outros": 3.49,
+    "concelho_key": "VILA VERDE"
+  },
+  {
+    "concelho": "VIZELA",
+    "participacao": 66.28,
+    "ajs": 37.58,
+    "av": 22.24,
+    "jcf": 16.17,
+    "hgm": 9.58,
+    "mm": 9.58,
+    "outros": 4.85,
+    "concelho_key": "VIZELA"
+  },
+  {
+    "concelho": "ALFÂNDEGA DA FÉ",
+    "participacao": 50.36,
+    "ajs": 33.24,
+    "av": 27.86,
+    "jcf": 6.14,
+    "hgm": 10.8,
+    "mm": 18.31,
+    "outros": 3.65,
+    "concelho_key": "ALFANDEGA DA FE"
+  },
+  {
+    "concelho": "BRAGANÇA",
+    "participacao": 48.61,
+    "ajs": 34.83,
+    "av": 23.8,
+    "jcf": 12.04,
+    "hgm": 11.55,
+    "mm": 14.25,
+    "outros": 3.53,
+    "concelho_key": "BRAGANCA"
+  },
+  {
+    "concelho": "CARRAZEDA DE ANSIÃES",
+    "participacao": 53.89,
+    "ajs": 25.52,
+    "av": 29.28,
+    "jcf": 9.1,
+    "hgm": 12.56,
+    "mm": 20.38,
+    "outros": 3.16,
+    "concelho_key": "CARRAZEDA DE ANSIAES"
+  },
+  {
+    "concelho": "FREIXO DE ESPADA À CINTA",
+    "participacao": 50.5,
+    "ajs": 32.91,
+    "av": 35.22,
+    "jcf": 5.73,
+    "hgm": 9.5,
+    "mm": 13.7,
+    "outros": 2.94,
+    "concelho_key": "FREIXO DE ESPADA A CINTA"
+  },
+  {
+    "concelho": "MACEDO DE CAVALEIROS",
+    "participacao": 45.36,
+    "ajs": 29.22,
+    "av": 27.29,
+    "jcf": 9.73,
+    "hgm": 12.09,
+    "mm": 18.62,
+    "outros": 3.05,
+    "concelho_key": "MACEDO DE CAVALEIROS"
+  },
+  {
+    "concelho": "MIRANDA DO DOURO",
+    "participacao": 47.1,
+    "ajs": 32.48,
+    "av": 24.04,
+    "jcf": 10.36,
+    "hgm": 11.67,
+    "mm": 17.6,
+    "outros": 3.85,
+    "concelho_key": "MIRANDA DO DOURO"
+  },
+  {
+    "concelho": "MIRANDELA",
+    "participacao": 52.27,
+    "ajs": 25.87,
+    "av": 32.85,
+    "jcf": 10.62,
+    "hgm": 13.32,
+    "mm": 14.53,
+    "outros": 2.81,
+    "concelho_key": "MIRANDELA"
+  },
+  {
+    "concelho": "MOGADOURO",
+    "participacao": 48.9,
+    "ajs": 25.1,
+    "av": 31.82,
+    "jcf": 8.7,
+    "hgm": 8.81,
+    "mm": 22.66,
+    "outros": 2.91,
+    "concelho_key": "MOGADOURO"
+  },
+  {
+    "concelho": "TORRE DE MONCORVO",
+    "participacao": 48.56,
+    "ajs": 32.08,
+    "av": 28.41,
+    "jcf": 8.07,
+    "hgm": 11.4,
+    "mm": 16.96,
+    "outros": 3.08,
+    "concelho_key": "TORRE DE MONCORVO"
+  },
+  {
+    "concelho": "VILA FLOR",
+    "participacao": 51.47,
+    "ajs": 27.94,
+    "av": 31.73,
+    "jcf": 9.03,
+    "hgm": 10.59,
+    "mm": 17.75,
+    "outros": 2.96,
+    "concelho_key": "VILA FLOR"
+  },
+  {
+    "concelho": "VIMIOSO",
+    "participacao": 38.07,
+    "ajs": 34.99,
+    "av": 23.9,
+    "jcf": 7.74,
+    "hgm": 7.01,
+    "mm": 24.01,
+    "outros": 2.35,
+    "concelho_key": "VIMIOSO"
+  },
+  {
+    "concelho": "VINHAIS",
+    "participacao": 42.16,
+    "ajs": 37.44,
+    "av": 25.49,
+    "jcf": 6.8,
+    "hgm": 11.23,
+    "mm": 15.96,
+    "outros": 3.08,
+    "concelho_key": "VINHAIS"
+  },
+  {
+    "concelho": "BELMONTE",
+    "participacao": 56.43,
+    "ajs": 46.83,
+    "av": 27.02,
+    "jcf": 7.62,
+    "hgm": 7.65,
+    "mm": 7.06,
+    "outros": 3.82,
+    "concelho_key": "BELMONTE"
+  },
+  {
+    "concelho": "CASTELO BRANCO",
+    "participacao": 62.54,
+    "ajs": 38.49,
+    "av": 25.18,
+    "jcf": 12.81,
+    "hgm": 11.77,
+    "mm": 7.69,
+    "outros": 4.06,
+    "concelho_key": "CASTELO BRANCO"
+  },
+  {
+    "concelho": "COVILHÃ",
+    "participacao": 62.38,
+    "ajs": 44.99,
+    "av": 19.6,
+    "jcf": 11.53,
+    "hgm": 12.08,
+    "mm": 6.15,
+    "outros": 5.65,
+    "concelho_key": "COVILHA"
+  },
+  {
+    "concelho": "FUNDÃO",
+    "participacao": 60.71,
+    "ajs": 41.39,
+    "av": 25.15,
+    "jcf": 11.12,
+    "hgm": 11.14,
+    "mm": 7.42,
+    "outros": 3.78,
+    "concelho_key": "FUNDAO"
+  },
+  {
+    "concelho": "IDANHA-A-NOVA",
+    "participacao": 57.53,
+    "ajs": 45.61,
+    "av": 27.95,
+    "jcf": 6.98,
+    "hgm": 9.49,
+    "mm": 5.94,
+    "outros": 4.03,
+    "concelho_key": "IDANHA-A-NOVA"
+  },
+  {
+    "concelho": "OLEIROS",
+    "participacao": 63.16,
+    "ajs": 25.63,
+    "av": 21.99,
+    "jcf": 10.51,
+    "hgm": 15.4,
+    "mm": 22.94,
+    "outros": 3.53,
+    "concelho_key": "OLEIROS"
+  },
+  {
+    "concelho": "PENAMACOR",
+    "participacao": 65.84,
+    "ajs": 71.3,
+    "av": 14.74,
+    "jcf": 3.33,
+    "hgm": 4.91,
+    "mm": 4.14,
+    "outros": 1.58,
+    "concelho_key": "PENAMACOR"
+  },
+  {
+    "concelho": "PROENÇA-A-NOVA",
+    "participacao": 65.64,
+    "ajs": 33.48,
+    "av": 22.65,
+    "jcf": 10.75,
+    "hgm": 13.75,
+    "mm": 16.25,
+    "outros": 3.12,
+    "concelho_key": "PROENCA-A-NOVA"
+  },
+  {
+    "concelho": "SERTÃ",
+    "participacao": 65.27,
+    "ajs": 26.44,
+    "av": 26.88,
+    "jcf": 11.34,
+    "hgm": 14.91,
+    "mm": 16.52,
+    "outros": 3.91,
+    "concelho_key": "SERTA"
+  },
+  {
+    "concelho": "VILA DE REI",
+    "participacao": 73.67,
+    "ajs": 18.59,
+    "av": 27.54,
+    "jcf": 12.15,
+    "hgm": 14.38,
+    "mm": 23.07,
+    "outros": 4.27,
+    "concelho_key": "VILA DE REI"
+  },
+  {
+    "concelho": "VILA VELHA DE RÓDÃO",
+    "participacao": 62.19,
+    "ajs": 43.35,
+    "av": 22.41,
+    "jcf": 7.81,
+    "hgm": 13.25,
+    "mm": 8.16,
+    "outros": 5.02,
+    "concelho_key": "VILA VELHA DE RODAO"
+  },
+  {
+    "concelho": "ARGANIL",
+    "participacao": 59.54,
+    "ajs": 33.91,
+    "av": 22.31,
+    "jcf": 10.4,
+    "hgm": 15.02,
+    "mm": 13.24,
+    "outros": 5.12,
+    "concelho_key": "ARGANIL"
+  },
+  {
+    "concelho": "CANTANHEDE",
+    "participacao": 55.67,
+    "ajs": 26.88,
+    "av": 25.2,
+    "jcf": 15.46,
+    "hgm": 12.7,
+    "mm": 15.82,
+    "outros": 3.94,
+    "concelho_key": "CANTANHEDE"
+  },
+  {
+    "concelho": "COIMBRA",
+    "participacao": 63.66,
+    "ajs": 39.01,
+    "av": 14.09,
+    "jcf": 16.79,
+    "hgm": 13.11,
+    "mm": 10.35,
+    "outros": 6.65,
+    "concelho_key": "COIMBRA"
+  },
+  {
+    "concelho": "CONDEIXA-A-NOVA",
+    "participacao": 65.12,
+    "ajs": 39.16,
+    "av": 17.76,
+    "jcf": 15.3,
+    "hgm": 13.28,
+    "mm": 9.07,
+    "outros": 5.43,
+    "concelho_key": "CONDEIXA-A-NOVA"
+  },
+  {
+    "concelho": "FIGUEIRA DA FOZ",
+    "participacao": 60.02,
+    "ajs": 32.29,
+    "av": 22.8,
+    "jcf": 14.84,
+    "hgm": 15.81,
+    "mm": 8.79,
+    "outros": 5.47,
+    "concelho_key": "FIGUEIRA DA FOZ"
+  },
+  {
+    "concelho": "GÓIS",
+    "participacao": 61.69,
+    "ajs": 35.21,
+    "av": 18.58,
+    "jcf": 12.8,
+    "hgm": 16.48,
+    "mm": 12.3,
+    "outros": 4.63,
+    "concelho_key": "GOIS"
+  },
+  {
+    "concelho": "LOUSÃ",
+    "participacao": 60.93,
+    "ajs": 38.75,
+    "av": 19.67,
+    "jcf": 13.95,
+    "hgm": 10.99,
+    "mm": 10.91,
+    "outros": 5.73,
+    "concelho_key": "LOUSA"
+  },
+  {
+    "concelho": "MIRA",
+    "participacao": 54.66,
+    "ajs": 27.88,
+    "av": 26.03,
+    "jcf": 15.56,
+    "hgm": 10.6,
+    "mm": 16.26,
+    "outros": 3.67,
+    "concelho_key": "MIRA"
+  },
+  {
+    "concelho": "MIRANDA DO CORVO",
+    "participacao": 58.78,
+    "ajs": 38.22,
+    "av": 18.43,
+    "jcf": 11.87,
+    "hgm": 13.02,
+    "mm": 13.42,
+    "outros": 5.04,
+    "concelho_key": "MIRANDA DO CORVO"
+  },
+  {
+    "concelho": "MONTEMOR-O-VELHO",
+    "participacao": 61.09,
+    "ajs": 33.93,
+    "av": 25.35,
+    "jcf": 14.91,
+    "hgm": 12.39,
+    "mm": 8.68,
+    "outros": 4.74,
+    "concelho_key": "MONTEMOR-O-VELHO"
+  },
+  {
+    "concelho": "OLIVEIRA DO HOSPITAL",
+    "participacao": 61.02,
+    "ajs": 34.35,
+    "av": 22.99,
+    "jcf": 12.19,
+    "hgm": 13.76,
+    "mm": 12.73,
+    "outros": 3.98,
+    "concelho_key": "OLIVEIRA DO HOSPITAL"
+  },
+  {
+    "concelho": "PAMPILHOSA DA SERRA",
+    "participacao": 54.87,
+    "ajs": 34.21,
+    "av": 21.24,
+    "jcf": 9.3,
+    "hgm": 15.96,
+    "mm": 15.56,
+    "outros": 3.73,
+    "concelho_key": "PAMPILHOSA DA SERRA"
+  },
+  {
+    "concelho": "PENACOVA",
+    "participacao": 56.31,
+    "ajs": 34.63,
+    "av": 19.38,
+    "jcf": 13.83,
+    "hgm": 12.33,
+    "mm": 15.36,
+    "outros": 4.47,
+    "concelho_key": "PENACOVA"
+  },
+  {
+    "concelho": "PENELA",
+    "participacao": 58.26,
+    "ajs": 32.79,
+    "av": 21.24,
+    "jcf": 11.93,
+    "hgm": 13.06,
+    "mm": 15.83,
+    "outros": 5.15,
+    "concelho_key": "PENELA"
+  },
+  {
+    "concelho": "SOURE",
+    "participacao": 61.65,
+    "ajs": 39.88,
+    "av": 21.58,
+    "jcf": 11.17,
+    "hgm": 13.81,
+    "mm": 8.64,
+    "outros": 4.92,
+    "concelho_key": "SOURE"
+  },
+  {
+    "concelho": "TÁBUA",
+    "participacao": 57.09,
+    "ajs": 32.55,
+    "av": 24.88,
+    "jcf": 12.38,
+    "hgm": 13.4,
+    "mm": 12.59,
+    "outros": 4.2,
+    "concelho_key": "TABUA"
+  },
+  {
+    "concelho": "VILA NOVA DE POIARES",
+    "participacao": 56.18,
+    "ajs": 31.36,
+    "av": 22.96,
+    "jcf": 13.46,
+    "hgm": 12.87,
+    "mm": 14.08,
+    "outros": 5.27,
+    "concelho_key": "VILA NOVA DE POIARES"
+  },
+  {
+    "concelho": "ALANDROAL",
+    "participacao": 59.16,
+    "ajs": 41.85,
+    "av": 30.44,
+    "jcf": 6.78,
+    "hgm": 9.24,
+    "mm": 4.88,
+    "outros": 6.81,
+    "concelho_key": "ALANDROAL"
+  },
+  {
+    "concelho": "ARRAIOLOS",
+    "participacao": 66.39,
+    "ajs": 36.36,
+    "av": 19.84,
+    "jcf": 11.5,
+    "hgm": 13.19,
+    "mm": 5.12,
+    "outros": 13.99,
+    "concelho_key": "ARRAIOLOS"
+  },
+  {
+    "concelho": "BORBA",
+    "participacao": 61.43,
+    "ajs": 37.96,
+    "av": 28.74,
+    "jcf": 10.56,
+    "hgm": 11.65,
+    "mm": 6.06,
+    "outros": 5.03,
+    "concelho_key": "BORBA"
+  },
+  {
+    "concelho": "ESTREMOZ",
+    "participacao": 59.99,
+    "ajs": 31.3,
+    "av": 28.38,
+    "jcf": 13.87,
+    "hgm": 13.08,
+    "mm": 7.3,
+    "outros": 6.07,
+    "concelho_key": "ESTREMOZ"
+  },
+  {
+    "concelho": "ÉVORA",
+    "participacao": 63.78,
+    "ajs": 32.85,
+    "av": 22.06,
+    "jcf": 15.94,
+    "hgm": 14.38,
+    "mm": 7.51,
+    "outros": 7.26,
+    "concelho_key": "EVORA"
+  },
+  {
+    "concelho": "MONTEMOR-O-NOVO",
+    "participacao": 63.46,
+    "ajs": 34.71,
+    "av": 18.28,
+    "jcf": 13.56,
+    "hgm": 13.38,
+    "mm": 6.41,
+    "outros": 13.66,
+    "concelho_key": "MONTEMOR-O-NOVO"
+  },
+  {
+    "concelho": "MORA",
+    "participacao": 58.08,
+    "ajs": 31.74,
+    "av": 24.41,
+    "jcf": 8.45,
+    "hgm": 14.32,
+    "mm": 6.53,
+    "outros": 14.55,
+    "concelho_key": "MORA"
+  },
+  {
+    "concelho": "MOURÃO",
+    "participacao": 58.26,
+    "ajs": 31.59,
+    "av": 37.64,
+    "jcf": 7.61,
+    "hgm": 8.92,
+    "mm": 9.74,
+    "outros": 4.5,
+    "concelho_key": "MOURAO"
+  },
+  {
+    "concelho": "PORTEL",
+    "participacao": 58.43,
+    "ajs": 36.7,
+    "av": 27.3,
+    "jcf": 7.84,
+    "hgm": 10.17,
+    "mm": 3.81,
+    "outros": 14.18,
+    "concelho_key": "PORTEL"
+  },
+  {
+    "concelho": "REDONDO",
+    "participacao": 55.57,
+    "ajs": 32.05,
+    "av": 26.08,
+    "jcf": 13.28,
+    "hgm": 13.94,
+    "mm": 7.17,
+    "outros": 7.48,
+    "concelho_key": "REDONDO"
+  },
+  {
+    "concelho": "REGUENGOS DE MONSARAZ",
+    "participacao": 57.07,
+    "ajs": 34,
+    "av": 32.48,
+    "jcf": 10.59,
+    "hgm": 9.82,
+    "mm": 8.3,
+    "outros": 4.81,
+    "concelho_key": "REGUENGOS DE MONSARAZ"
+  },
+  {
+    "concelho": "VENDAS NOVAS",
+    "participacao": 61.3,
+    "ajs": 29.93,
+    "av": 26.75,
+    "jcf": 13.43,
+    "hgm": 13.22,
+    "mm": 8.47,
+    "outros": 8.2,
+    "concelho_key": "VENDAS NOVAS"
+  },
+  {
+    "concelho": "VIANA DO ALENTEJO",
+    "participacao": 60.62,
+    "ajs": 33.24,
+    "av": 28.47,
+    "jcf": 10.25,
+    "hgm": 12.26,
+    "mm": 5.99,
+    "outros": 9.79,
+    "concelho_key": "VIANA DO ALENTEJO"
+  },
+  {
+    "concelho": "VILA VIÇOSA",
+    "participacao": 58.5,
+    "ajs": 31.77,
+    "av": 29.97,
+    "jcf": 12.68,
+    "hgm": 11.58,
+    "mm": 8.79,
+    "outros": 5.21,
+    "concelho_key": "VILA VICOSA"
+  },
+  {
+    "concelho": "ALBUFEIRA",
+    "participacao": 52.74,
+    "ajs": 22.8,
+    "av": 38.75,
+    "jcf": 14.72,
+    "hgm": 11.23,
+    "mm": 7.7,
+    "outros": 4.8,
+    "concelho_key": "ALBUFEIRA"
+  },
+  {
+    "concelho": "ALCOUTIM",
+    "participacao": 55.73,
+    "ajs": 40.17,
+    "av": 18.31,
+    "jcf": 7.68,
+    "hgm": 11.73,
+    "mm": 16.62,
+    "outros": 5.49,
+    "concelho_key": "ALCOUTIM"
+  },
+  {
+    "concelho": "ALJEZUR",
+    "participacao": 60.07,
+    "ajs": 30.92,
+    "av": 25.9,
+    "jcf": 11.32,
+    "hgm": 14.88,
+    "mm": 7.42,
+    "outros": 9.56,
+    "concelho_key": "ALJEZUR"
+  },
+  {
+    "concelho": "CASTRO MARIM",
+    "participacao": 56.42,
+    "ajs": 28.22,
+    "av": 37.89,
+    "jcf": 8.89,
+    "hgm": 11.71,
+    "mm": 8.71,
+    "outros": 4.58,
+    "concelho_key": "CASTRO MARIM"
+  },
+  {
+    "concelho": "FARO",
+    "participacao": 59.93,
+    "ajs": 30.33,
+    "av": 25.66,
+    "jcf": 15.28,
+    "hgm": 13.62,
+    "mm": 8.39,
+    "outros": 6.72,
+    "concelho_key": "FARO"
+  },
+  {
+    "concelho": "LAGOA",
+    "participacao": 60.47,
+    "ajs": 23.66,
+    "av": 38.27,
+    "jcf": 12.23,
+    "hgm": 12.22,
+    "mm": 7.64,
+    "outros": 5.98,
+    "concelho_key": "LAGOA"
+  },
+  {
+    "concelho": "LAGOS",
+    "participacao": 56.4,
+    "ajs": 28.64,
+    "av": 29.17,
+    "jcf": 12.7,
+    "hgm": 13.88,
+    "mm": 8.23,
+    "outros": 7.38,
+    "concelho_key": "LAGOS"
+  },
+  {
+    "concelho": "LOULÉ",
+    "participacao": 52.67,
+    "ajs": 24.7,
+    "av": 34.42,
+    "jcf": 13.62,
+    "hgm": 12.15,
+    "mm": 9.85,
+    "outros": 5.26,
+    "concelho_key": "LOULE"
+  },
+  {
+    "concelho": "MONCHIQUE",
+    "participacao": 64.51,
+    "ajs": 34.99,
+    "av": 22.15,
+    "jcf": 9.32,
+    "hgm": 12.68,
+    "mm": 13.25,
+    "outros": 7.61,
+    "concelho_key": "MONCHIQUE"
+  },
+  {
+    "concelho": "OLHÃO",
+    "participacao": 54.68,
+    "ajs": 25.6,
+    "av": 36.28,
+    "jcf": 11.68,
+    "hgm": 12.76,
+    "mm": 7.2,
+    "outros": 6.48,
+    "concelho_key": "OLHAO"
+  },
+  {
+    "concelho": "PORTIMÃO",
+    "participacao": 57.26,
+    "ajs": 25.72,
+    "av": 34.37,
+    "jcf": 14.01,
+    "hgm": 12.34,
+    "mm": 7.74,
+    "outros": 5.82,
+    "concelho_key": "PORTIMAO"
+  },
+  {
+    "concelho": "SÃO BRÁS DE ALPORTEL",
+    "participacao": 57.14,
+    "ajs": 29.71,
+    "av": 28.49,
+    "jcf": 12.87,
+    "hgm": 12.22,
+    "mm": 10.32,
+    "outros": 6.39,
+    "concelho_key": "SAO BRAS DE ALPORTEL"
+  },
+  {
+    "concelho": "SILVES",
+    "participacao": 58.54,
+    "ajs": 25.42,
+    "av": 37.25,
+    "jcf": 11.85,
+    "hgm": 11.07,
+    "mm": 7.15,
+    "outros": 7.26,
+    "concelho_key": "SILVES"
+  },
+  {
+    "concelho": "TAVIRA",
+    "participacao": 57.76,
+    "ajs": 30.97,
+    "av": 28.54,
+    "jcf": 12.08,
+    "hgm": 13.11,
+    "mm": 9.23,
+    "outros": 6.07,
+    "concelho_key": "TAVIRA"
+  },
+  {
+    "concelho": "VILA DO BISPO",
+    "participacao": 58.73,
+    "ajs": 29.37,
+    "av": 26.51,
+    "jcf": 8.81,
+    "hgm": 15.77,
+    "mm": 10.42,
+    "outros": 9.12,
+    "concelho_key": "VILA DO BISPO"
+  },
+  {
+    "concelho": "VILA REAL DE SANTO ANTÓNIO",
+    "participacao": 54.92,
+    "ajs": 28.87,
+    "av": 37.92,
+    "jcf": 8.58,
+    "hgm": 11.6,
+    "mm": 6.48,
+    "outros": 6.55,
+    "concelho_key": "VILA REAL DE SANTO ANTONIO"
+  },
+  {
+    "concelho": "AGUIAR DA BEIRA",
+    "participacao": 52.2,
+    "ajs": 29.7,
+    "av": 25.15,
+    "jcf": 11.44,
+    "hgm": 11.31,
+    "mm": 20.49,
+    "outros": 1.91,
+    "concelho_key": "AGUIAR DA BEIRA"
+  },
+  {
+    "concelho": "ALMEIDA",
+    "participacao": 50.55,
+    "ajs": 32.71,
+    "av": 25.96,
+    "jcf": 9.35,
+    "hgm": 12.73,
+    "mm": 15.4,
+    "outros": 3.85,
+    "concelho_key": "ALMEIDA"
+  },
+  {
+    "concelho": "CELORICO DA BEIRA",
+    "participacao": 52.71,
+    "ajs": 32.3,
+    "av": 29.77,
+    "jcf": 8.89,
+    "hgm": 10.9,
+    "mm": 14.97,
+    "outros": 3.17,
+    "concelho_key": "CELORICO DA BEIRA"
+  },
+  {
+    "concelho": "FIGUEIRA DE CASTELO RODRIGO",
+    "participacao": 51.63,
+    "ajs": 29.36,
+    "av": 29.32,
+    "jcf": 7.24,
+    "hgm": 10.24,
+    "mm": 20.87,
+    "outros": 2.97,
+    "concelho_key": "FIGUEIRA DE CASTELO RODRIGO"
+  },
+  {
+    "concelho": "FORNOS DE ALGODRES",
+    "participacao": 62.95,
+    "ajs": 36.67,
+    "av": 26.43,
+    "jcf": 9.68,
+    "hgm": 9.56,
+    "mm": 14.66,
+    "outros": 3,
+    "concelho_key": "FORNOS DE ALGODRES"
+  },
+  {
+    "concelho": "GOUVEIA",
+    "participacao": 55.23,
+    "ajs": 36.54,
+    "av": 22.82,
+    "jcf": 9.14,
+    "hgm": 14.31,
+    "mm": 13.53,
+    "outros": 3.66,
+    "concelho_key": "GOUVEIA"
+  },
+  {
+    "concelho": "GUARDA",
+    "participacao": 63.85,
+    "ajs": 39.69,
+    "av": 22.44,
+    "jcf": 12.98,
+    "hgm": 10.42,
+    "mm": 11.02,
+    "outros": 3.45,
+    "concelho_key": "GUARDA"
+  },
+  {
+    "concelho": "MANTEIGAS",
+    "participacao": 53.3,
+    "ajs": 38.48,
+    "av": 20.6,
+    "jcf": 12.19,
+    "hgm": 15.17,
+    "mm": 9.67,
+    "outros": 3.89,
+    "concelho_key": "MANTEIGAS"
+  },
+  {
+    "concelho": "MÊDA",
+    "participacao": 48.9,
+    "ajs": 31.16,
+    "av": 24.93,
+    "jcf": 7.51,
+    "hgm": 11.01,
+    "mm": 22.15,
+    "outros": 3.24,
+    "concelho_key": "MEDA"
+  },
+  {
+    "concelho": "PINHEL",
+    "participacao": 52.24,
+    "ajs": 32.13,
+    "av": 25.93,
+    "jcf": 10.01,
+    "hgm": 9.87,
+    "mm": 18.68,
+    "outros": 3.38,
+    "concelho_key": "PINHEL"
+  },
+  {
+    "concelho": "SABUGAL",
+    "participacao": 48.54,
+    "ajs": 39.6,
+    "av": 28.47,
+    "jcf": 7.68,
+    "hgm": 9.84,
+    "mm": 11.18,
+    "outros": 3.23,
+    "concelho_key": "SABUGAL"
+  },
+  {
+    "concelho": "SEIA",
+    "participacao": 58.62,
+    "ajs": 34.85,
+    "av": 22.96,
+    "jcf": 10.45,
+    "hgm": 15.67,
+    "mm": 11.84,
+    "outros": 4.23,
+    "concelho_key": "SEIA"
+  },
+  {
+    "concelho": "TRANCOSO",
+    "participacao": 54.8,
+    "ajs": 33.59,
+    "av": 27.46,
+    "jcf": 9.67,
+    "hgm": 9.71,
+    "mm": 16.09,
+    "outros": 3.48,
+    "concelho_key": "TRANCOSO"
+  },
+  {
+    "concelho": "VILA NOVA DE FOZ CÔA",
+    "participacao": 49.57,
+    "ajs": 33.51,
+    "av": 29.01,
+    "jcf": 8.3,
+    "hgm": 10.6,
+    "mm": 14.93,
+    "outros": 3.65,
+    "concelho_key": "VILA NOVA DE FOZ COA"
+  },
+  {
+    "concelho": "ALCOBAÇA",
+    "participacao": 63.98,
+    "ajs": 28.83,
+    "av": 23.46,
+    "jcf": 17.67,
+    "hgm": 12.9,
+    "mm": 12.28,
+    "outros": 4.86,
+    "concelho_key": "ALCOBACA"
+  },
+  {
+    "concelho": "ALVAIÁZERE",
+    "participacao": 59.13,
+    "ajs": 18.14,
+    "av": 28.06,
+    "jcf": 13.25,
+    "hgm": 12.98,
+    "mm": 24.15,
+    "outros": 3.42,
+    "concelho_key": "ALVAIAZERE"
+  },
+  {
+    "concelho": "ANSIÃO",
+    "participacao": 61.7,
+    "ajs": 28.66,
+    "av": 22.31,
+    "jcf": 13.76,
+    "hgm": 12.62,
+    "mm": 18.84,
+    "outros": 3.81,
+    "concelho_key": "ANSIAO"
+  },
+  {
+    "concelho": "BATALHA",
+    "participacao": 66.65,
+    "ajs": 21.64,
+    "av": 24.49,
+    "jcf": 21.62,
+    "hgm": 12.75,
+    "mm": 15.62,
+    "outros": 3.88,
+    "concelho_key": "BATALHA"
+  },
+  {
+    "concelho": "BOMBARRAL",
+    "participacao": 61.14,
+    "ajs": 32.13,
+    "av": 24.57,
+    "jcf": 14.21,
+    "hgm": 13.73,
+    "mm": 9.67,
+    "outros": 5.69,
+    "concelho_key": "BOMBARRAL"
+  },
+  {
+    "concelho": "CALDAS DA RAINHA",
+    "participacao": 61.68,
+    "ajs": 44.49,
+    "av": 20.06,
+    "jcf": 13.15,
+    "hgm": 9.61,
+    "mm": 8.46,
+    "outros": 4.23,
+    "concelho_key": "CALDAS DA RAINHA"
+  },
+  {
+    "concelho": "CASTANHEIRA DE PÊRA",
+    "participacao": 59.53,
+    "ajs": 41.47,
+    "av": 19.58,
+    "jcf": 11.4,
+    "hgm": 12.94,
+    "mm": 10.56,
+    "outros": 4.05,
+    "concelho_key": "CASTANHEIRA DE PERA"
+  },
+  {
+    "concelho": "FIGUEIRÓ DOS VINHOS",
+    "participacao": 60.69,
+    "ajs": 27.79,
+    "av": 23.15,
+    "jcf": 12.27,
+    "hgm": 16.14,
+    "mm": 16.07,
+    "outros": 4.58,
+    "concelho_key": "FIGUEIRO DOS VINHOS"
+  },
+  {
+    "concelho": "LEIRIA",
+    "participacao": 66.05,
+    "ajs": 25.58,
+    "av": 21.25,
+    "jcf": 20.97,
+    "hgm": 13.37,
+    "mm": 14.18,
+    "outros": 4.65,
+    "concelho_key": "LEIRIA"
+  },
+  {
+    "concelho": "MARINHA GRANDE",
+    "participacao": 60.99,
+    "ajs": 31.17,
+    "av": 23.28,
+    "jcf": 15.34,
+    "hgm": 14.07,
+    "mm": 7.4,
+    "outros": 8.74,
+    "concelho_key": "MARINHA GRANDE"
+  },
+  {
+    "concelho": "NAZARÉ",
+    "participacao": 49.7,
+    "ajs": 33.74,
+    "av": 25.21,
+    "jcf": 13.44,
+    "hgm": 11.57,
+    "mm": 9.12,
+    "outros": 6.92,
+    "concelho_key": "NAZARE"
+  },
+  {
+    "concelho": "ÓBIDOS",
+    "participacao": 63.02,
+    "ajs": 38.22,
+    "av": 22.74,
+    "jcf": 14.54,
+    "hgm": 11.12,
+    "mm": 8.46,
+    "outros": 4.92,
+    "concelho_key": "OBIDOS"
+  },
+  {
+    "concelho": "PEDRÓGÃO GRANDE",
+    "participacao": 58.12,
+    "ajs": 23.81,
+    "av": 23.93,
+    "jcf": 15.29,
+    "hgm": 16.5,
+    "mm": 15.89,
+    "outros": 4.58,
+    "concelho_key": "PEDROGAO GRANDE"
+  },
+  {
+    "concelho": "PENICHE",
+    "participacao": 55.79,
+    "ajs": 31.04,
+    "av": 27.29,
+    "jcf": 13.6,
+    "hgm": 12.77,
+    "mm": 9.21,
+    "outros": 6.09,
+    "concelho_key": "PENICHE"
+  },
+  {
+    "concelho": "POMBAL",
+    "participacao": 57.26,
+    "ajs": 23.43,
+    "av": 24.96,
+    "jcf": 17,
+    "hgm": 13.25,
+    "mm": 17.17,
+    "outros": 4.19,
+    "concelho_key": "POMBAL"
+  },
+  {
+    "concelho": "PORTO DE MÓS",
+    "participacao": 65.06,
+    "ajs": 23.91,
+    "av": 27.09,
+    "jcf": 18.04,
+    "hgm": 13.89,
+    "mm": 12.87,
+    "outros": 4.2,
+    "concelho_key": "PORTO DE MOS"
+  },
+  {
+    "concelho": "ALENQUER",
+    "participacao": 63.89,
+    "ajs": 30.23,
+    "av": 26.86,
+    "jcf": 15.34,
+    "hgm": 13.22,
+    "mm": 7.55,
+    "outros": 6.8,
+    "concelho_key": "ALENQUER"
+  },
+  {
+    "concelho": "ARRUDA DOS VINHOS",
+    "participacao": 70.23,
+    "ajs": 31.56,
+    "av": 21.16,
+    "jcf": 22.19,
+    "hgm": 11.59,
+    "mm": 8.4,
+    "outros": 5.1,
+    "concelho_key": "ARRUDA DOS VINHOS"
+  },
+  {
+    "concelho": "AZAMBUJA",
+    "participacao": 61.84,
+    "ajs": 30.36,
+    "av": 27.52,
+    "jcf": 13.33,
+    "hgm": 14.63,
+    "mm": 7.05,
+    "outros": 7.11,
+    "concelho_key": "AZAMBUJA"
+  },
+  {
+    "concelho": "CADAVAL",
+    "participacao": 60.43,
+    "ajs": 32.34,
+    "av": 27.03,
+    "jcf": 13,
+    "hgm": 11.92,
+    "mm": 11.24,
+    "outros": 4.47,
+    "concelho_key": "CADAVAL"
+  },
+  {
+    "concelho": "CASCAIS",
+    "participacao": 63.57,
+    "ajs": 28.19,
+    "av": 18.75,
+    "jcf": 24.74,
+    "hgm": 13.7,
+    "mm": 9.46,
+    "outros": 5.16,
+    "concelho_key": "CASCAIS"
+  },
+  {
+    "concelho": "LISBOA",
+    "participacao": 66.08,
+    "ajs": 35.15,
+    "av": 14.41,
+    "jcf": 22.79,
+    "hgm": 11.27,
+    "mm": 9.34,
+    "outros": 7.04,
+    "concelho_key": "LISBOA"
+  },
+  {
+    "concelho": "LOURES",
+    "participacao": 64.13,
+    "ajs": 32.96,
+    "av": 23.59,
+    "jcf": 15.54,
+    "hgm": 12.99,
+    "mm": 7.72,
+    "outros": 7.2,
+    "concelho_key": "LOURES"
+  },
+  {
+    "concelho": "LOURINHÃ",
+    "participacao": 63.1,
+    "ajs": 25.33,
+    "av": 30.39,
+    "jcf": 15.02,
+    "hgm": 12.22,
+    "mm": 12.88,
+    "outros": 4.16,
+    "concelho_key": "LOURINHA"
+  },
+  {
+    "concelho": "MAFRA",
+    "participacao": 68.53,
+    "ajs": 28.5,
+    "av": 22.05,
+    "jcf": 20.55,
+    "hgm": 13.78,
+    "mm": 9.39,
+    "outros": 5.73,
+    "concelho_key": "MAFRA"
+  },
+  {
+    "concelho": "OEIRAS",
+    "participacao": 68.9,
+    "ajs": 33.64,
+    "av": 12.61,
+    "jcf": 23.93,
+    "hgm": 14.72,
+    "mm": 9.14,
+    "outros": 5.96,
+    "concelho_key": "OEIRAS"
+  },
+  {
+    "concelho": "SINTRA",
+    "participacao": 59.82,
+    "ajs": 31.07,
+    "av": 24.51,
+    "jcf": 16.4,
+    "hgm": 13.67,
+    "mm": 7.86,
+    "outros": 6.49,
+    "concelho_key": "SINTRA"
+  },
+  {
+    "concelho": "SOBRAL DE MONTE AGRAÇO",
+    "participacao": 66.68,
+    "ajs": 29.81,
+    "av": 24.7,
+    "jcf": 17.37,
+    "hgm": 12.38,
+    "mm": 8.47,
+    "outros": 7.27,
+    "concelho_key": "SOBRAL DE MONTE AGRACO"
+  },
+  {
+    "concelho": "TORRES VEDRAS",
+    "participacao": 65.84,
+    "ajs": 28.43,
+    "av": 24.16,
+    "jcf": 17.87,
+    "hgm": 13.43,
+    "mm": 10.2,
+    "outros": 5.91,
+    "concelho_key": "TORRES VEDRAS"
+  },
+  {
+    "concelho": "VILA FRANCA DE XIRA",
+    "participacao": 66.11,
+    "ajs": 33.13,
+    "av": 23.45,
+    "jcf": 15.6,
+    "hgm": 13.25,
+    "mm": 6.53,
+    "outros": 8.04,
+    "concelho_key": "VILA FRANCA DE XIRA"
+  },
+  {
+    "concelho": "AMADORA",
+    "participacao": 59.73,
+    "ajs": 35.39,
+    "av": 20.92,
+    "jcf": 14.79,
+    "hgm": 13.5,
+    "mm": 8.19,
+    "outros": 7.21,
+    "concelho_key": "AMADORA"
+  },
+  {
+    "concelho": "ODIVELAS",
+    "participacao": 63.11,
+    "ajs": 33.02,
+    "av": 23.39,
+    "jcf": 16.26,
+    "hgm": 13.16,
+    "mm": 8.33,
+    "outros": 5.84,
+    "concelho_key": "ODIVELAS"
+  },
+  {
+    "concelho": "ALTER DO CHÃO",
+    "participacao": 61.69,
+    "ajs": 30.09,
+    "av": 33.19,
+    "jcf": 10.36,
+    "hgm": 9.74,
+    "mm": 9,
+    "outros": 7.62,
+    "concelho_key": "ALTER DO CHAO"
+  },
+  {
+    "concelho": "ARRONCHES",
+    "participacao": 58.71,
+    "ajs": 28.32,
+    "av": 32.54,
+    "jcf": 11.6,
+    "hgm": 14.2,
+    "mm": 8.78,
+    "outros": 4.56,
+    "concelho_key": "ARRONCHES"
+  },
+  {
+    "concelho": "AVIS",
+    "participacao": 64.28,
+    "ajs": 30.8,
+    "av": 25.74,
+    "jcf": 7.3,
+    "hgm": 12.75,
+    "mm": 5.11,
+    "outros": 18.3,
+    "concelho_key": "AVIS"
+  },
+  {
+    "concelho": "CAMPO MAIOR",
+    "participacao": 57.03,
+    "ajs": 32.2,
+    "av": 34.08,
+    "jcf": 9.96,
+    "hgm": 11.56,
+    "mm": 4.1,
+    "outros": 8.1,
+    "concelho_key": "CAMPO MAIOR"
+  },
+  {
+    "concelho": "CASTELO DE VIDE",
+    "participacao": 63.25,
+    "ajs": 33.25,
+    "av": 20.76,
+    "jcf": 11.62,
+    "hgm": 16.66,
+    "mm": 10.57,
+    "outros": 7.14,
+    "concelho_key": "CASTELO DE VIDE"
+  },
+  {
+    "concelho": "CRATO",
+    "participacao": 62.81,
+    "ajs": 34.28,
+    "av": 31.83,
+    "jcf": 9.75,
+    "hgm": 11.07,
+    "mm": 7.93,
+    "outros": 5.14,
+    "concelho_key": "CRATO"
+  },
+  {
+    "concelho": "ELVAS",
+    "participacao": 55,
+    "ajs": 25.89,
+    "av": 39.86,
+    "jcf": 12.56,
+    "hgm": 12.66,
+    "mm": 5.09,
+    "outros": 3.94,
+    "concelho_key": "ELVAS"
+  },
+  {
+    "concelho": "FRONTEIRA",
+    "participacao": 61.42,
+    "ajs": 29.96,
+    "av": 34.99,
+    "jcf": 12.95,
+    "hgm": 9.92,
+    "mm": 7.73,
+    "outros": 4.45,
+    "concelho_key": "FRONTEIRA"
+  },
+  {
+    "concelho": "GAVIÃO",
+    "participacao": 65.18,
+    "ajs": 45.33,
+    "av": 27.66,
+    "jcf": 5.63,
+    "hgm": 10,
+    "mm": 5.94,
+    "outros": 5.44,
+    "concelho_key": "GAVIAO"
+  },
+  {
+    "concelho": "MARVÃO",
+    "participacao": 60.78,
+    "ajs": 31.73,
+    "av": 21.4,
+    "jcf": 9.64,
+    "hgm": 16.45,
+    "mm": 14.32,
+    "outros": 6.46,
+    "concelho_key": "MARVAO"
+  },
+  {
+    "concelho": "MONFORTE",
+    "participacao": 57.3,
+    "ajs": 31.31,
+    "av": 38.5,
+    "jcf": 8.6,
+    "hgm": 11,
+    "mm": 5.78,
+    "outros": 4.81,
+    "concelho_key": "MONFORTE"
+  },
+  {
+    "concelho": "NISA",
+    "participacao": 59.06,
+    "ajs": 34.92,
+    "av": 28.42,
+    "jcf": 8.35,
+    "hgm": 13.22,
+    "mm": 9.11,
+    "outros": 5.98,
+    "concelho_key": "NISA"
+  },
+  {
+    "concelho": "PONTE DE SOR",
+    "participacao": 56.58,
+    "ajs": 31.78,
+    "av": 30.99,
+    "jcf": 10.5,
+    "hgm": 13.19,
+    "mm": 6.17,
+    "outros": 7.37,
+    "concelho_key": "PONTE DE SOR"
+  },
+  {
+    "concelho": "PORTALEGRE",
+    "participacao": 61.9,
+    "ajs": 31.72,
+    "av": 24.33,
+    "jcf": 14.51,
+    "hgm": 13.68,
+    "mm": 11.32,
+    "outros": 4.44,
+    "concelho_key": "PORTALEGRE"
+  },
+  {
+    "concelho": "SOUSEL",
+    "participacao": 63.1,
+    "ajs": 27.78,
+    "av": 34.87,
+    "jcf": 11.51,
+    "hgm": 11.85,
+    "mm": 9.06,
+    "outros": 4.93,
+    "concelho_key": "SOUSEL"
+  },
+  {
+    "concelho": "AMARANTE",
+    "participacao": 60.3,
+    "ajs": 34.8,
+    "av": 19.63,
+    "jcf": 12.34,
+    "hgm": 9.53,
+    "mm": 16,
+    "outros": 7.7,
+    "concelho_key": "AMARANTE"
+  },
+  {
+    "concelho": "BAIÃO",
+    "participacao": 54.87,
+    "ajs": 44.8,
+    "av": 19.92,
+    "jcf": 7.91,
+    "hgm": 8.24,
+    "mm": 16.26,
+    "outros": 2.87,
+    "concelho_key": "BAIAO"
+  },
+  {
+    "concelho": "FELGUEIRAS",
+    "participacao": 63.42,
+    "ajs": 31.12,
+    "av": 24.57,
+    "jcf": 15.02,
+    "hgm": 9.85,
+    "mm": 15.3,
+    "outros": 4.14,
+    "concelho_key": "FELGUEIRAS"
+  },
+  {
+    "concelho": "GONDOMAR",
+    "participacao": 63.95,
+    "ajs": 32.18,
+    "av": 22.24,
+    "jcf": 15.66,
+    "hgm": 13.29,
+    "mm": 10.44,
+    "outros": 6.19,
+    "concelho_key": "GONDOMAR"
+  },
+  {
+    "concelho": "LOUSADA",
+    "participacao": 65.17,
+    "ajs": 31.85,
+    "av": 25.67,
+    "jcf": 14.58,
+    "hgm": 9.91,
+    "mm": 14.02,
+    "outros": 3.97,
+    "concelho_key": "LOUSADA"
+  },
+  {
+    "concelho": "MAIA",
+    "participacao": 69.59,
+    "ajs": 31.33,
+    "av": 18.04,
+    "jcf": 20.38,
+    "hgm": 13.35,
+    "mm": 11.84,
+    "outros": 5.06,
+    "concelho_key": "MAIA"
+  },
+  {
+    "concelho": "MARCO DE CANAVESES",
+    "participacao": 61.04,
+    "ajs": 32.67,
+    "av": 23.16,
+    "jcf": 14.65,
+    "hgm": 10.61,
+    "mm": 14.64,
+    "outros": 4.27,
+    "concelho_key": "MARCO DE CANAVESES"
+  },
+  {
+    "concelho": "MATOSINHOS",
+    "participacao": 65.36,
+    "ajs": 34.07,
+    "av": 18.06,
+    "jcf": 18.78,
+    "hgm": 13.02,
+    "mm": 10.49,
+    "outros": 5.58,
+    "concelho_key": "MATOSINHOS"
+  },
+  {
+    "concelho": "PAÇOS DE FERREIRA",
+    "participacao": 65.56,
+    "ajs": 26.73,
+    "av": 25.81,
+    "jcf": 17.29,
+    "hgm": 10.65,
+    "mm": 15.18,
+    "outros": 4.34,
+    "concelho_key": "PACOS DE FERREIRA"
+  },
+  {
+    "concelho": "PAREDES",
+    "participacao": 66.77,
+    "ajs": 27.82,
+    "av": 25.87,
+    "jcf": 15.18,
+    "hgm": 11.34,
+    "mm": 15.59,
+    "outros": 4.2,
+    "concelho_key": "PAREDES"
+  },
+  {
+    "concelho": "PENAFIEL",
+    "participacao": 67.44,
+    "ajs": 30.74,
+    "av": 24.66,
+    "jcf": 13.79,
+    "hgm": 12.17,
+    "mm": 13.98,
+    "outros": 4.66,
+    "concelho_key": "PENAFIEL"
+  },
+  {
+    "concelho": "PORTO",
+    "participacao": 64.51,
+    "ajs": 33.43,
+    "av": 14.04,
+    "jcf": 22.09,
+    "hgm": 11.76,
+    "mm": 11.47,
+    "outros": 7.21,
+    "concelho_key": "PORTO"
+  },
+  {
+    "concelho": "PÓVOA DE VARZIM",
+    "participacao": 61.38,
+    "ajs": 24.44,
+    "av": 26.3,
+    "jcf": 18.87,
+    "hgm": 11.68,
+    "mm": 14.91,
+    "outros": 3.8,
+    "concelho_key": "POVOA DE VARZIM"
+  },
+  {
+    "concelho": "SANTO TIRSO",
+    "participacao": 66.75,
+    "ajs": 35.45,
+    "av": 20.2,
+    "jcf": 16.36,
+    "hgm": 11.33,
+    "mm": 12.36,
+    "outros": 4.3,
+    "concelho_key": "SANTO TIRSO"
+  },
+  {
+    "concelho": "VALONGO",
+    "participacao": 65.06,
+    "ajs": 31.93,
+    "av": 23.4,
+    "jcf": 16.17,
+    "hgm": 12.69,
+    "mm": 10.15,
+    "outros": 5.66,
+    "concelho_key": "VALONGO"
+  },
+  {
+    "concelho": "VILA DO CONDE",
+    "participacao": 64.57,
+    "ajs": 29.15,
+    "av": 24.5,
+    "jcf": 17.36,
+    "hgm": 12.22,
+    "mm": 12.38,
+    "outros": 4.39,
+    "concelho_key": "VILA DO CONDE"
+  },
+  {
+    "concelho": "VILA NOVA DE GAIA",
+    "participacao": 64.87,
+    "ajs": 32.22,
+    "av": 19.99,
+    "jcf": 17.98,
+    "hgm": 13.09,
+    "mm": 10.99,
+    "outros": 5.73,
+    "concelho_key": "VILA NOVA DE GAIA"
+  },
+  {
+    "concelho": "TROFA",
+    "participacao": 67.93,
+    "ajs": 27.85,
+    "av": 24.85,
+    "jcf": 16,
+    "hgm": 11.85,
+    "mm": 15.92,
+    "outros": 3.53,
+    "concelho_key": "TROFA"
+  },
+  {
+    "concelho": "ABRANTES",
+    "participacao": 63.3,
+    "ajs": 30,
+    "av": 30.09,
+    "jcf": 11.41,
+    "hgm": 14.3,
+    "mm": 8.05,
+    "outros": 6.15,
+    "concelho_key": "ABRANTES"
+  },
+  {
+    "concelho": "ALCANENA",
+    "participacao": 60.37,
+    "ajs": 26.66,
+    "av": 25.02,
+    "jcf": 17.11,
+    "hgm": 13.5,
+    "mm": 11.98,
+    "outros": 5.73,
+    "concelho_key": "ALCANENA"
+  },
+  {
+    "concelho": "ALMEIRIM",
+    "participacao": 56.81,
+    "ajs": 32.69,
+    "av": 30.28,
+    "jcf": 13.92,
+    "hgm": 11.46,
+    "mm": 6.34,
+    "outros": 5.31,
+    "concelho_key": "ALMEIRIM"
+  },
+  {
+    "concelho": "ALPIARÇA",
+    "participacao": 63.28,
+    "ajs": 33.69,
+    "av": 25.57,
+    "jcf": 11.77,
+    "hgm": 10.43,
+    "mm": 5.1,
+    "outros": 13.44,
+    "concelho_key": "ALPIARCA"
+  },
+  {
+    "concelho": "BENAVENTE",
+    "participacao": 60.94,
+    "ajs": 24.75,
+    "av": 34.42,
+    "jcf": 15.65,
+    "hgm": 12.53,
+    "mm": 6.73,
+    "outros": 5.92,
+    "concelho_key": "BENAVENTE"
+  },
+  {
+    "concelho": "CARTAXO",
+    "participacao": 62.25,
+    "ajs": 29.15,
+    "av": 27.77,
+    "jcf": 14.61,
+    "hgm": 15.82,
+    "mm": 7.26,
+    "outros": 5.39,
+    "concelho_key": "CARTAXO"
+  },
+  {
+    "concelho": "CHAMUSCA",
+    "participacao": 59.99,
+    "ajs": 33.48,
+    "av": 29.75,
+    "jcf": 11.18,
+    "hgm": 11.7,
+    "mm": 6.46,
+    "outros": 7.43,
+    "concelho_key": "CHAMUSCA"
+  },
+  {
+    "concelho": "CONSTÂNCIA",
+    "participacao": 68.24,
+    "ajs": 28.35,
+    "av": 32.38,
+    "jcf": 11.88,
+    "hgm": 14.56,
+    "mm": 5.72,
+    "outros": 7.11,
+    "concelho_key": "CONSTANCIA"
+  },
+  {
+    "concelho": "CORUCHE",
+    "participacao": 59.34,
+    "ajs": 31.53,
+    "av": 30.4,
+    "jcf": 11.53,
+    "hgm": 13.18,
+    "mm": 5.81,
+    "outros": 7.55,
+    "concelho_key": "CORUCHE"
+  },
+  {
+    "concelho": "ENTRONCAMENTO",
+    "participacao": 63.1,
+    "ajs": 29.72,
+    "av": 30.83,
+    "jcf": 15.14,
+    "hgm": 11.66,
+    "mm": 7.1,
+    "outros": 5.55,
+    "concelho_key": "ENTRONCAMENTO"
+  },
+  {
+    "concelho": "FERREIRA DO ZÊZERE",
+    "participacao": 67.12,
+    "ajs": 26.42,
+    "av": 27.88,
+    "jcf": 14.58,
+    "hgm": 14.07,
+    "mm": 12.76,
+    "outros": 4.29,
+    "concelho_key": "FERREIRA DO ZEZERE"
+  },
+  {
+    "concelho": "GOLEGÃ",
+    "participacao": 62.08,
+    "ajs": 28.77,
+    "av": 28.97,
+    "jcf": 16.03,
+    "hgm": 13.39,
+    "mm": 7.34,
+    "outros": 5.5,
+    "concelho_key": "GOLEGA"
+  },
+  {
+    "concelho": "MAÇÃO",
+    "participacao": 69.24,
+    "ajs": 31.03,
+    "av": 25.55,
+    "jcf": 10.28,
+    "hgm": 13.61,
+    "mm": 14.09,
+    "outros": 5.44,
+    "concelho_key": "MACAO"
+  },
+  {
+    "concelho": "RIO MAIOR",
+    "participacao": 62,
+    "ajs": 27.91,
+    "av": 26.1,
+    "jcf": 16.17,
+    "hgm": 13.73,
+    "mm": 11.77,
+    "outros": 4.32,
+    "concelho_key": "RIO MAIOR"
+  },
+  {
+    "concelho": "SALVATERRA DE MAGOS",
+    "participacao": 58.23,
+    "ajs": 25.84,
+    "av": 34.44,
+    "jcf": 12.88,
+    "hgm": 14.14,
+    "mm": 6.17,
+    "outros": 6.53,
+    "concelho_key": "SALVATERRA DE MAGOS"
+  },
+  {
+    "concelho": "SANTARÉM",
+    "participacao": 63.23,
+    "ajs": 31.2,
+    "av": 23.13,
+    "jcf": 17.51,
+    "hgm": 13.13,
+    "mm": 9.62,
+    "outros": 5.41,
+    "concelho_key": "SANTAREM"
+  },
+  {
+    "concelho": "SARDOAL",
+    "participacao": 71.19,
+    "ajs": 31.3,
+    "av": 25.1,
+    "jcf": 11.3,
+    "hgm": 12.53,
+    "mm": 12.98,
+    "outros": 6.79,
+    "concelho_key": "SARDOAL"
+  },
+  {
+    "concelho": "TOMAR",
+    "participacao": 61.89,
+    "ajs": 29.86,
+    "av": 25.6,
+    "jcf": 13.56,
+    "hgm": 13.65,
+    "mm": 11.69,
+    "outros": 5.64,
+    "concelho_key": "TOMAR"
+  },
+  {
+    "concelho": "TORRES NOVAS",
+    "participacao": 64.91,
+    "ajs": 31.34,
+    "av": 24.68,
+    "jcf": 14.3,
+    "hgm": 13.2,
+    "mm": 9.32,
+    "outros": 7.16,
+    "concelho_key": "TORRES NOVAS"
+  },
+  {
+    "concelho": "VILA NOVA DA BARQUINHA",
+    "participacao": 67.15,
+    "ajs": 27.5,
+    "av": 32.8,
+    "jcf": 13.61,
+    "hgm": 13.08,
+    "mm": 6.55,
+    "outros": 6.46,
+    "concelho_key": "VILA NOVA DA BARQUINHA"
+  },
+  {
+    "concelho": "OURÉM",
+    "participacao": 61.83,
+    "ajs": 19.79,
+    "av": 28.69,
+    "jcf": 17.67,
+    "hgm": 13.3,
+    "mm": 17.16,
+    "outros": 3.39,
+    "concelho_key": "OUREM"
+  },
+  {
+    "concelho": "ALCÁCER DO SAL",
+    "participacao": 58.46,
+    "ajs": 35.68,
+    "av": 25.79,
+    "jcf": 8.56,
+    "hgm": 13.61,
+    "mm": 5.53,
+    "outros": 10.83,
+    "concelho_key": "ALCACER DO SAL"
+  },
+  {
+    "concelho": "ALCOCHETE",
+    "participacao": 69.6,
+    "ajs": 30.41,
+    "av": 22.77,
+    "jcf": 21.07,
+    "hgm": 12.64,
+    "mm": 6.09,
+    "outros": 7.02,
+    "concelho_key": "ALCOCHETE"
+  },
+  {
+    "concelho": "ALMADA",
+    "participacao": 62.22,
+    "ajs": 33.86,
+    "av": 21.24,
+    "jcf": 14.83,
+    "hgm": 14.17,
+    "mm": 6.78,
+    "outros": 9.12,
+    "concelho_key": "ALMADA"
+  },
+  {
+    "concelho": "BARREIRO",
+    "participacao": 62.54,
+    "ajs": 36.33,
+    "av": 22.37,
+    "jcf": 10.7,
+    "hgm": 13.6,
+    "mm": 5.41,
+    "outros": 11.59,
+    "concelho_key": "BARREIRO"
+  },
+  {
+    "concelho": "GRÂNDOLA",
+    "participacao": 61.74,
+    "ajs": 37.18,
+    "av": 23.59,
+    "jcf": 9.44,
+    "hgm": 14.07,
+    "mm": 6.86,
+    "outros": 8.86,
+    "concelho_key": "GRANDOLA"
+  },
+  {
+    "concelho": "MOITA",
+    "participacao": 58.07,
+    "ajs": 31.21,
+    "av": 29.47,
+    "jcf": 10.01,
+    "hgm": 12.68,
+    "mm": 4.97,
+    "outros": 11.66,
+    "concelho_key": "MOITA"
+  },
+  {
+    "concelho": "MONTIJO",
+    "participacao": 60.54,
+    "ajs": 27.88,
+    "av": 28.72,
+    "jcf": 17.77,
+    "hgm": 13.01,
+    "mm": 6.44,
+    "outros": 6.18,
+    "concelho_key": "MONTIJO"
+  },
+  {
+    "concelho": "PALMELA",
+    "participacao": 63.51,
+    "ajs": 28.99,
+    "av": 28.37,
+    "jcf": 14.74,
+    "hgm": 13.82,
+    "mm": 6.04,
+    "outros": 8.04,
+    "concelho_key": "PALMELA"
+  },
+  {
+    "concelho": "SANTIAGO DO CACÉM",
+    "participacao": 61.19,
+    "ajs": 34.32,
+    "av": 23.77,
+    "jcf": 11.43,
+    "hgm": 14.21,
+    "mm": 7.02,
+    "outros": 9.25,
+    "concelho_key": "SANTIAGO DO CACEM"
+  },
+  {
+    "concelho": "SEIXAL",
+    "participacao": 62.78,
+    "ajs": 32.63,
+    "av": 24.27,
+    "jcf": 14.37,
+    "hgm": 13.47,
+    "mm": 6.46,
+    "outros": 8.8,
+    "concelho_key": "SEIXAL"
+  },
+  {
+    "concelho": "SESIMBRA",
+    "participacao": 63.15,
+    "ajs": 28.92,
+    "av": 28.37,
+    "jcf": 15.19,
+    "hgm": 13.52,
+    "mm": 6.44,
+    "outros": 7.56,
+    "concelho_key": "SESIMBRA"
+  },
+  {
+    "concelho": "SETÚBAL",
+    "participacao": 60.92,
+    "ajs": 31.04,
+    "av": 25.33,
+    "jcf": 14.63,
+    "hgm": 14.2,
+    "mm": 6.53,
+    "outros": 8.27,
+    "concelho_key": "SETUBAL"
+  },
+  {
+    "concelho": "SINES",
+    "participacao": 56.25,
+    "ajs": 36.67,
+    "av": 24.4,
+    "jcf": 10.98,
+    "hgm": 12.02,
+    "mm": 7.1,
+    "outros": 8.83,
+    "concelho_key": "SINES"
+  },
+  {
+    "concelho": "ARCOS DE VALDEVEZ",
+    "participacao": 47.44,
+    "ajs": 27.58,
+    "av": 24.01,
+    "jcf": 11.75,
+    "hgm": 11.1,
+    "mm": 22.27,
+    "outros": 3.29,
+    "concelho_key": "ARCOS DE VALDEVEZ"
+  },
+  {
+    "concelho": "CAMINHA",
+    "participacao": 59.91,
+    "ajs": 30.1,
+    "av": 22.93,
+    "jcf": 13.73,
+    "hgm": 15.81,
+    "mm": 12.55,
+    "outros": 4.88,
+    "concelho_key": "CAMINHA"
+  },
+  {
+    "concelho": "MELGAÇO",
+    "participacao": 36.46,
+    "ajs": 34.31,
+    "av": 20.95,
+    "jcf": 11.8,
+    "hgm": 11.35,
+    "mm": 17.89,
+    "outros": 3.7,
+    "concelho_key": "MELGACO"
+  },
+  {
+    "concelho": "MONÇÃO",
+    "participacao": 49.78,
+    "ajs": 26.12,
+    "av": 27.23,
+    "jcf": 13.85,
+    "hgm": 10.76,
+    "mm": 18.36,
+    "outros": 3.68,
+    "concelho_key": "MONCAO"
+  },
+  {
+    "concelho": "PAREDES DE COURA",
+    "participacao": 54.09,
+    "ajs": 33.74,
+    "av": 25.5,
+    "jcf": 9.78,
+    "hgm": 8.55,
+    "mm": 16.97,
+    "outros": 5.46,
+    "concelho_key": "PAREDES DE COURA"
+  },
+  {
+    "concelho": "PONTE DA BARCA",
+    "participacao": 49.14,
+    "ajs": 32.37,
+    "av": 24.17,
+    "jcf": 10.55,
+    "hgm": 9.96,
+    "mm": 19.81,
+    "outros": 3.14,
+    "concelho_key": "PONTE DA BARCA"
+  },
+  {
+    "concelho": "PONTE DE LIMA",
+    "participacao": 64.02,
+    "ajs": 24.22,
+    "av": 26.29,
+    "jcf": 15.46,
+    "hgm": 11.54,
+    "mm": 19.15,
+    "outros": 3.34,
+    "concelho_key": "PONTE DE LIMA"
+  },
+  {
+    "concelho": "VALENÇA",
+    "participacao": 53.87,
+    "ajs": 27.09,
+    "av": 35.04,
+    "jcf": 10.59,
+    "hgm": 10.46,
+    "mm": 13.2,
+    "outros": 3.62,
+    "concelho_key": "VALENCA"
+  },
+  {
+    "concelho": "VIANA DO CASTELO",
+    "participacao": 62.26,
+    "ajs": 30.01,
+    "av": 22.05,
+    "jcf": 15.4,
+    "hgm": 15.38,
+    "mm": 11.67,
+    "outros": 5.49,
+    "concelho_key": "VIANA DO CASTELO"
+  },
+  {
+    "concelho": "VILA NOVA DE CERVEIRA",
+    "participacao": 59.39,
+    "ajs": 33.31,
+    "av": 29.77,
+    "jcf": 11.21,
+    "hgm": 10.12,
+    "mm": 12.08,
+    "outros": 3.51,
+    "concelho_key": "VILA NOVA DE CERVEIRA"
+  },
+  {
+    "concelho": "ALIJÓ",
+    "participacao": 52.82,
+    "ajs": 29.66,
+    "av": 25.81,
+    "jcf": 9.69,
+    "hgm": 12.86,
+    "mm": 17.79,
+    "outros": 4.19,
+    "concelho_key": "ALIJO"
+  },
+  {
+    "concelho": "BOTICAS",
+    "participacao": 43.02,
+    "ajs": 21.81,
+    "av": 25.64,
+    "jcf": 7.04,
+    "hgm": 9.94,
+    "mm": 32.87,
+    "outros": 2.7,
+    "concelho_key": "BOTICAS"
+  },
+  {
+    "concelho": "CHAVES",
+    "participacao": 48.61,
+    "ajs": 27.08,
+    "av": 30.44,
+    "jcf": 10.24,
+    "hgm": 13.68,
+    "mm": 14.6,
+    "outros": 3.96,
+    "concelho_key": "CHAVES"
+  },
+  {
+    "concelho": "MESÃO FRIO",
+    "participacao": 53.8,
+    "ajs": 38.89,
+    "av": 23.58,
+    "jcf": 10.02,
+    "hgm": 8.33,
+    "mm": 16.04,
+    "outros": 3.14,
+    "concelho_key": "MESAO FRIO"
+  },
+  {
+    "concelho": "MONDIM DE BASTO",
+    "participacao": 50.03,
+    "ajs": 30.12,
+    "av": 23.49,
+    "jcf": 9.67,
+    "hgm": 10.97,
+    "mm": 21.91,
+    "outros": 3.84,
+    "concelho_key": "MONDIM DE BASTO"
+  },
+  {
+    "concelho": "MONTALEGRE",
+    "participacao": 40.25,
+    "ajs": 38.27,
+    "av": 24.18,
+    "jcf": 7.85,
+    "hgm": 7.83,
+    "mm": 18.24,
+    "outros": 3.63,
+    "concelho_key": "MONTALEGRE"
+  },
+  {
+    "concelho": "MURÇA",
+    "participacao": 49.45,
+    "ajs": 28.3,
+    "av": 28.69,
+    "jcf": 8.67,
+    "hgm": 12.12,
+    "mm": 19.57,
+    "outros": 2.65,
+    "concelho_key": "MURCA"
+  },
+  {
+    "concelho": "PESO DA RÉGUA",
+    "participacao": 51.67,
+    "ajs": 33.05,
+    "av": 26.12,
+    "jcf": 10.79,
+    "hgm": 11.44,
+    "mm": 14.83,
+    "outros": 3.77,
+    "concelho_key": "PESO DA REGUA"
+  },
+  {
+    "concelho": "RIBEIRA DE PENA",
+    "participacao": 41.03,
+    "ajs": 36.68,
+    "av": 21.28,
+    "jcf": 10.08,
+    "hgm": 7.98,
+    "mm": 21.13,
+    "outros": 2.85,
+    "concelho_key": "RIBEIRA DE PENA"
+  },
+  {
+    "concelho": "SABROSA",
+    "participacao": 53.98,
+    "ajs": 31.87,
+    "av": 25.07,
+    "jcf": 11.29,
+    "hgm": 12.75,
+    "mm": 15.56,
+    "outros": 3.46,
+    "concelho_key": "SABROSA"
+  },
+  {
+    "concelho": "SANTA MARTA DE PENAGUIÃO",
+    "participacao": 52.17,
+    "ajs": 42.22,
+    "av": 22.32,
+    "jcf": 9.22,
+    "hgm": 8.32,
+    "mm": 15.21,
+    "outros": 2.71,
+    "concelho_key": "SANTA MARTA DE PENAGUIAO"
+  },
+  {
+    "concelho": "VALPAÇOS",
+    "participacao": 44.37,
+    "ajs": 20.97,
+    "av": 31.03,
+    "jcf": 7.97,
+    "hgm": 12.33,
+    "mm": 24.74,
+    "outros": 2.96,
+    "concelho_key": "VALPACOS"
+  },
+  {
+    "concelho": "VILA POUCA DE AGUIAR",
+    "participacao": 51.6,
+    "ajs": 31.89,
+    "av": 25.27,
+    "jcf": 10.24,
+    "hgm": 12,
+    "mm": 16.89,
+    "outros": 3.71,
+    "concelho_key": "VILA POUCA DE AGUIAR"
+  },
+  {
+    "concelho": "VILA REAL",
+    "participacao": 61.12,
+    "ajs": 32.53,
+    "av": 23.28,
+    "jcf": 14.27,
+    "hgm": 12.07,
+    "mm": 13.77,
+    "outros": 4.08,
+    "concelho_key": "VILA REAL"
+  },
+  {
+    "concelho": "ARMAMAR",
+    "participacao": 58.04,
+    "ajs": 22.94,
+    "av": 30.46,
+    "jcf": 14.91,
+    "hgm": 10.77,
+    "mm": 17.44,
+    "outros": 3.48,
+    "concelho_key": "ARMAMAR"
+  },
+  {
+    "concelho": "CARREGAL DO SAL",
+    "participacao": 54.74,
+    "ajs": 29.5,
+    "av": 27.69,
+    "jcf": 11.17,
+    "hgm": 13.07,
+    "mm": 15.19,
+    "outros": 3.38,
+    "concelho_key": "CARREGAL DO SAL"
+  },
+  {
+    "concelho": "CASTRO DAIRE",
+    "participacao": 54.52,
+    "ajs": 25.44,
+    "av": 30.35,
+    "jcf": 11.35,
+    "hgm": 12.25,
+    "mm": 17.37,
+    "outros": 3.24,
+    "concelho_key": "CASTRO DAIRE"
+  },
+  {
+    "concelho": "CINFÃES",
+    "participacao": 54.98,
+    "ajs": 36.47,
+    "av": 25.26,
+    "jcf": 9.73,
+    "hgm": 10.11,
+    "mm": 15.31,
+    "outros": 3.12,
+    "concelho_key": "CINFAES"
+  },
+  {
+    "concelho": "LAMEGO",
+    "participacao": 59.92,
+    "ajs": 31.54,
+    "av": 25.85,
+    "jcf": 12.13,
+    "hgm": 10.93,
+    "mm": 16.03,
+    "outros": 3.52,
+    "concelho_key": "LAMEGO"
+  },
+  {
+    "concelho": "MANGUALDE",
+    "participacao": 55.32,
+    "ajs": 31.63,
+    "av": 28.22,
+    "jcf": 11.66,
+    "hgm": 13.24,
+    "mm": 12.09,
+    "outros": 3.16,
+    "concelho_key": "MANGUALDE"
+  },
+  {
+    "concelho": "MOIMENTA DA BEIRA",
+    "participacao": 52.37,
+    "ajs": 30.31,
+    "av": 30.02,
+    "jcf": 10.05,
+    "hgm": 11.54,
+    "mm": 14.93,
+    "outros": 3.15,
+    "concelho_key": "MOIMENTA DA BEIRA"
+  },
+  {
+    "concelho": "MORTÁGUA",
+    "participacao": 55.07,
+    "ajs": 33.04,
+    "av": 18.59,
+    "jcf": 11.41,
+    "hgm": 16.18,
+    "mm": 16.21,
+    "outros": 4.57,
+    "concelho_key": "MORTAGUA"
+  },
+  {
+    "concelho": "NELAS",
+    "participacao": 56.62,
+    "ajs": 28.55,
+    "av": 27.35,
+    "jcf": 12.51,
+    "hgm": 13.95,
+    "mm": 13.03,
+    "outros": 4.61,
+    "concelho_key": "NELAS"
+  },
+  {
+    "concelho": "OLIVEIRA DE FRADES",
+    "participacao": 63.45,
+    "ajs": 25.77,
+    "av": 27.83,
+    "jcf": 14.45,
+    "hgm": 12.6,
+    "mm": 16.09,
+    "outros": 3.26,
+    "concelho_key": "OLIVEIRA DE FRADES"
+  },
+  {
+    "concelho": "PENALVA DO CASTELO",
+    "participacao": 57.37,
+    "ajs": 34.08,
+    "av": 25.14,
+    "jcf": 11.08,
+    "hgm": 11.28,
+    "mm": 15.45,
+    "outros": 2.97,
+    "concelho_key": "PENALVA DO CASTELO"
+  },
+  {
+    "concelho": "PENEDONO",
+    "participacao": 52.03,
+    "ajs": 28.2,
+    "av": 31.22,
+    "jcf": 10,
+    "hgm": 11.29,
+    "mm": 15.25,
+    "outros": 4.04,
+    "concelho_key": "PENEDONO"
+  },
+  {
+    "concelho": "RESENDE",
+    "participacao": 56.42,
+    "ajs": 36.97,
+    "av": 20.43,
+    "jcf": 10.69,
+    "hgm": 8.18,
+    "mm": 20.53,
+    "outros": 3.2,
+    "concelho_key": "RESENDE"
+  },
+  {
+    "concelho": "SANTA COMBA DÃO",
+    "participacao": 56.16,
+    "ajs": 30.24,
+    "av": 23.92,
+    "jcf": 12.69,
+    "hgm": 14.1,
+    "mm": 15.07,
+    "outros": 3.98,
+    "concelho_key": "SANTA COMBA DAO"
+  },
+  {
+    "concelho": "SÃO JOÃO DA PESQUEIRA",
+    "participacao": 54.87,
+    "ajs": 26.79,
+    "av": 32.12,
+    "jcf": 9.21,
+    "hgm": 11.69,
+    "mm": 16.9,
+    "outros": 3.29,
+    "concelho_key": "SAO JOAO DA PESQUEIRA"
+  },
+  {
+    "concelho": "SÃO PEDRO DO SUL",
+    "participacao": 59.52,
+    "ajs": 32.54,
+    "av": 25.73,
+    "jcf": 11.57,
+    "hgm": 12.04,
+    "mm": 13.9,
+    "outros": 4.22,
+    "concelho_key": "SAO PEDRO DO SUL"
+  },
+  {
+    "concelho": "SÁTÃO",
+    "participacao": 52.61,
+    "ajs": 26.98,
+    "av": 29.04,
+    "jcf": 12.27,
+    "hgm": 8.74,
+    "mm": 19.96,
+    "outros": 3.01,
+    "concelho_key": "SATAO"
+  },
+  {
+    "concelho": "SERNANCELHE",
+    "participacao": 63.22,
+    "ajs": 21.1,
+    "av": 28.69,
+    "jcf": 9.51,
+    "hgm": 9.7,
+    "mm": 28.98,
+    "outros": 2.02,
+    "concelho_key": "SERNANCELHE"
+  },
+  {
+    "concelho": "TABUAÇO",
+    "participacao": 57,
+    "ajs": 25.01,
+    "av": 34.22,
+    "jcf": 10.15,
+    "hgm": 11.81,
+    "mm": 15.73,
+    "outros": 3.08,
+    "concelho_key": "TABUACO"
+  },
+  {
+    "concelho": "TAROUCA",
+    "participacao": 57.21,
+    "ajs": 26.49,
+    "av": 31.45,
+    "jcf": 9.92,
+    "hgm": 11.9,
+    "mm": 16.37,
+    "outros": 3.87,
+    "concelho_key": "TAROUCA"
+  },
+  {
+    "concelho": "TONDELA",
+    "participacao": 60.46,
+    "ajs": 28.98,
+    "av": 24.15,
+    "jcf": 12.47,
+    "hgm": 14.91,
+    "mm": 15.77,
+    "outros": 3.72,
+    "concelho_key": "TONDELA"
+  },
+  {
+    "concelho": "VILA NOVA DE PAIVA",
+    "participacao": 47.41,
+    "ajs": 26.36,
+    "av": 27.47,
+    "jcf": 12.82,
+    "hgm": 10.11,
+    "mm": 20.3,
+    "outros": 2.94,
+    "concelho_key": "VILA NOVA DE PAIVA"
+  },
+  {
+    "concelho": "VISEU",
+    "participacao": 62.2,
+    "ajs": 30.49,
+    "av": 23.4,
+    "jcf": 16.15,
+    "hgm": 12.96,
+    "mm": 13.42,
+    "outros": 3.58,
+    "concelho_key": "VISEU"
+  },
+  {
+    "concelho": "VOUZELA",
+    "participacao": 62.59,
+    "ajs": 29.49,
+    "av": 26.01,
+    "jcf": 12.79,
+    "hgm": 12.59,
+    "mm": 15.58,
+    "outros": 3.54,
+    "concelho_key": "VOUZELA"
+  },
+  {
+    "concelho": "CALHETA",
+    "participacao": 51.28,
+    "ajs": 16.17,
+    "av": 36.32,
+    "jcf": 10.72,
+    "hgm": 6.89,
+    "mm": 24.24,
+    "outros": 5.66,
+    "concelho_key": "CALHETA"
+  },
+  {
+    "concelho": "CÂMARA DE LOBOS",
+    "participacao": 52.13,
+    "ajs": 17.58,
+    "av": 38.99,
+    "jcf": 12.03,
+    "hgm": 6.53,
+    "mm": 17.31,
+    "outros": 7.56,
+    "concelho_key": "CAMARA DE LOBOS"
+  },
+  {
+    "concelho": "FUNCHAL",
+    "participacao": 55.65,
+    "ajs": 23.9,
+    "av": 30.26,
+    "jcf": 16.71,
+    "hgm": 9.26,
+    "mm": 13.25,
+    "outros": 6.62,
+    "concelho_key": "FUNCHAL"
+  },
+  {
+    "concelho": "MACHICO",
+    "participacao": 51.99,
+    "ajs": 31.33,
+    "av": 32.88,
+    "jcf": 10.78,
+    "hgm": 6.16,
+    "mm": 12.81,
+    "outros": 6.04,
+    "concelho_key": "MACHICO"
+  },
+  {
+    "concelho": "PONTA DO SOL",
+    "participacao": 49.49,
+    "ajs": 20.02,
+    "av": 36.18,
+    "jcf": 10.73,
+    "hgm": 6.38,
+    "mm": 21.29,
+    "outros": 5.4,
+    "concelho_key": "PONTA DO SOL"
+  },
+  {
+    "concelho": "PORTO MONIZ",
+    "participacao": 55.17,
+    "ajs": 28.59,
+    "av": 29.07,
+    "jcf": 8.08,
+    "hgm": 6.15,
+    "mm": 22.14,
+    "outros": 5.97,
+    "concelho_key": "PORTO MONIZ"
+  },
+  {
+    "concelho": "RIBEIRA BRAVA",
+    "participacao": 50.73,
+    "ajs": 16.88,
+    "av": 39.27,
+    "jcf": 11.98,
+    "hgm": 5.76,
+    "mm": 19.44,
+    "outros": 6.67,
+    "concelho_key": "RIBEIRA BRAVA"
+  },
+  {
+    "concelho": "SANTA CRUZ",
+    "participacao": 58.58,
+    "ajs": 24.25,
+    "av": 33.68,
+    "jcf": 16.02,
+    "hgm": 8.46,
+    "mm": 10.66,
+    "outros": 6.93,
+    "concelho_key": "SANTA CRUZ"
+  },
+  {
+    "concelho": "SANTANA",
+    "participacao": 54.74,
+    "ajs": 21.89,
+    "av": 30.37,
+    "jcf": 11.79,
+    "hgm": 9.54,
+    "mm": 18.49,
+    "outros": 7.92,
+    "concelho_key": "SANTANA"
+  },
+  {
+    "concelho": "SÃO VICENTE",
+    "participacao": 49.09,
+    "ajs": 18.58,
+    "av": 43.59,
+    "jcf": 10.16,
+    "hgm": 6.61,
+    "mm": 15.74,
+    "outros": 5.32,
+    "concelho_key": "SAO VICENTE"
+  },
+  {
+    "concelho": "PORTO SANTO",
+    "participacao": 53.05,
+    "ajs": 24.78,
+    "av": 33.71,
+    "jcf": 12.22,
+    "hgm": 10.45,
+    "mm": 12.81,
+    "outros": 6.03,
+    "concelho_key": "PORTO SANTO"
+  },
+  {
+    "concelho": "VILA DO PORTO",
+    "participacao": 39.1,
+    "ajs": 40.79,
+    "av": 20.19,
+    "jcf": 12.06,
+    "hgm": 10.04,
+    "mm": 10.46,
+    "outros": 6.46,
+    "concelho_key": "VILA DO PORTO"
+  },
+  {
+    "concelho": "LAGOA",
+    "participacao": 41.06,
+    "ajs": 30.07,
+    "av": 33.44,
+    "jcf": 13.43,
+    "hgm": 8.91,
+    "mm": 9.62,
+    "outros": 4.53,
+    "concelho_key": "LAGOA"
+  },
+  {
+    "concelho": "NORDESTE",
+    "participacao": 41.55,
+    "ajs": 27.62,
+    "av": 32.19,
+    "jcf": 7.42,
+    "hgm": 7.79,
+    "mm": 18.59,
+    "outros": 6.39,
+    "concelho_key": "NORDESTE"
+  },
+  {
+    "concelho": "PONTA DELGADA",
+    "participacao": 42.96,
+    "ajs": 29.04,
+    "av": 27.62,
+    "jcf": 16.09,
+    "hgm": 10.52,
+    "mm": 11.68,
+    "outros": 5.05,
+    "concelho_key": "PONTA DELGADA"
+  },
+  {
+    "concelho": "POVOAÇÃO",
+    "participacao": 38.56,
+    "ajs": 30.56,
+    "av": 35.41,
+    "jcf": 8.29,
+    "hgm": 8.6,
+    "mm": 12.48,
+    "outros": 4.66,
+    "concelho_key": "POVOACAO"
+  },
+  {
+    "concelho": "RIBEIRA GRANDE",
+    "participacao": 35.5,
+    "ajs": 25.26,
+    "av": 36.5,
+    "jcf": 11.39,
+    "hgm": 9.52,
+    "mm": 12.55,
+    "outros": 4.78,
+    "concelho_key": "RIBEIRA GRANDE"
+  },
+  {
+    "concelho": "VILA FRANCA DO CAMPO",
+    "participacao": 37.31,
+    "ajs": 25.08,
+    "av": 39.31,
+    "jcf": 10.82,
+    "hgm": 6.89,
+    "mm": 12.69,
+    "outros": 5.21,
+    "concelho_key": "VILA FRANCA DO CAMPO"
+  },
+  {
+    "concelho": "ANGRA DO HEROÍSMO",
+    "participacao": 46.75,
+    "ajs": 34.81,
+    "av": 20.87,
+    "jcf": 12.78,
+    "hgm": 11.86,
+    "mm": 14.49,
+    "outros": 5.19,
+    "concelho_key": "ANGRA DO HEROISMO"
+  },
+  {
+    "concelho": "VILA DA PRAIA DA VITÓRIA",
+    "participacao": 41.49,
+    "ajs": 32.98,
+    "av": 23.69,
+    "jcf": 12.8,
+    "hgm": 10.07,
+    "mm": 15.74,
+    "outros": 4.72,
+    "concelho_key": "VILA DA PRAIA DA VITORIA"
+  },
+  {
+    "concelho": "SANTA CRUZ DA GRACIOSA",
+    "participacao": 38.98,
+    "ajs": 36.11,
+    "av": 16.96,
+    "jcf": 7.84,
+    "hgm": 11.38,
+    "mm": 23.96,
+    "outros": 3.75,
+    "concelho_key": "SANTA CRUZ DA GRACIOSA"
+  },
+  {
+    "concelho": "CALHETA",
+    "participacao": 39.61,
+    "ajs": 26.05,
+    "av": 20.84,
+    "jcf": 9.91,
+    "hgm": 15.85,
+    "mm": 21.49,
+    "outros": 5.86,
+    "concelho_key": "CALHETA"
+  },
+  {
+    "concelho": "VELAS",
+    "participacao": 42.82,
+    "ajs": 29.4,
+    "av": 25.69,
+    "jcf": 9.31,
+    "hgm": 11.46,
+    "mm": 17.16,
+    "outros": 6.98,
+    "concelho_key": "VELAS"
+  },
+  {
+    "concelho": "LAJES DO PICO",
+    "participacao": 45.08,
+    "ajs": 37.52,
+    "av": 17.52,
+    "jcf": 8.81,
+    "hgm": 11.45,
+    "mm": 18.52,
+    "outros": 6.18,
+    "concelho_key": "LAJES DO PICO"
+  },
+  {
+    "concelho": "MADALENA",
+    "participacao": 44.19,
+    "ajs": 32.86,
+    "av": 22.72,
+    "jcf": 14.37,
+    "hgm": 9.26,
+    "mm": 15.24,
+    "outros": 5.55,
+    "concelho_key": "MADALENA"
+  },
+  {
+    "concelho": "SÃO ROQUE DO PICO",
+    "participacao": 45.67,
+    "ajs": 33.47,
+    "av": 21.92,
+    "jcf": 11.48,
+    "hgm": 11.55,
+    "mm": 16.32,
+    "outros": 5.26,
+    "concelho_key": "SAO ROQUE DO PICO"
+  },
+  {
+    "concelho": "HORTA",
+    "participacao": 47.61,
+    "ajs": 33.17,
+    "av": 19.36,
+    "jcf": 10.67,
+    "hgm": 11.8,
+    "mm": 17.98,
+    "outros": 7.02,
+    "concelho_key": "HORTA"
+  },
+  {
+    "concelho": "LAJES DAS FLORES",
+    "participacao": 48.07,
+    "ajs": 33.92,
+    "av": 21.38,
+    "jcf": 10.95,
+    "hgm": 12.72,
+    "mm": 14.49,
+    "outros": 6.54,
+    "concelho_key": "LAJES DAS FLORES"
+  },
+  {
+    "concelho": "SANTA CRUZ DAS FLORES",
+    "participacao": 46.29,
+    "ajs": 31.25,
+    "av": 24,
+    "jcf": 10.63,
+    "hgm": 12.75,
+    "mm": 13.63,
+    "outros": 7.74,
+    "concelho_key": "SANTA CRUZ DAS FLORES"
+  },
+  {
+    "concelho": "CORVO",
+    "participacao": 53.3,
+    "ajs": 43.46,
+    "av": 20.42,
+    "jcf": 10.99,
+    "hgm": 12.57,
+    "mm": 10.47,
+    "outros": 2.09,
+    "concelho_key": "CORVO"
+  }
+]
+
+];
+
+
+const FINAL_A = { label:"António José Seguro", colorVar:"--seguro" };
+const FINAL_B = { label:"André Ventura",       colorVar:"--ventura" };
+
+/* ---------------------------
+   STATE
+   turnout: % do grupo que vota na 2.ª volta
+   shareB: % (entre os que votam) que escolhe Ventura; Seguro = 100 - shareB
+--------------------------- */
+let state = {}; // { [key]: { turnout:int, shareB:int } }
+
+function clampInt(x){
+  if (Number.isNaN(x)) return 0;
+  x = Math.round(x);
+  return Math.max(0, Math.min(100, x));
+}
+function fmtPct1(x){ return x.toFixed(1) + "%"; }
+
+function initNeutral(){
+  state = {};
+  for (const g of GROUPS){
+    const isAbst = g.key === "abst";
+    const turnout = isAbst ? 0 : 100;
+
+    let shareB = 50;
+    if (g.key === "av")  shareB = 100;
+    if (g.key === "ajs") shareB = 0;
+
+    state[g.key] = { turnout, shareB };
+  }
+}
+
+/* Presets for editorial exploration (not "prediction") */
+function presetAntiAV(){
+  // keep turnout same as neutral, shift non-finalists to Seguro
+  initNeutral();
+  for (const g of GROUPS){
+    if (g.key === "ajs") state[g.key].shareB = 0;
+    else if (g.key === "av") state[g.key].shareB = 100;
+    else state[g.key].shareB = 20; // 80% Seguro, 20% Ventura
+  }
+}
+function presetMobilize(){
+  initNeutral();
+  // bring some of the abst/branco/nulo into turnout + mild lean
+  state["abst"].turnout = 25;
+  state["abst"].shareB = 55;
+  // mild right drift among some centre-right groups
+  state["lmm"].shareB = 60;
+  state["hgm"].shareB = 55;
+}
+
+/* ---------------------------
+   URL STATE (shareable)
+--------------------------- */
+function encodeState(){
+  // compact: key=turnout-shareB;...
+  const parts = [];
+  for (const g of GROUPS){
+    const s = state[g.key];
+    parts.push(`${g.key}:${s.turnout}-${s.shareB}`);
+  }
+  return parts.join(";");
+}
+function decodeState(str){
+  const map = {};
+  const parts = (str || "").split(";").filter(Boolean);
+  for (const p of parts){
+    const [k, rest] = p.split(":");
+    if (!k || !rest) continue;
+    const [t, b] = rest.split("-").map(x => clampInt(parseFloat(x)));
+    map[k] = { turnout: t, shareB: b };
+  }
+  // apply only if all required keys exist
+  for (const g of GROUPS){
+    if (!map[g.key]) return false;
+  }
+  state = map;
+  return true;
+}
+function readFromURL(){
+  const hash = window.location.hash || "";
+  const m = hash.match(/state=([^&]+)/);
+  if (!m) return false;
+  try{
+    const raw = decodeURIComponent(m[1]);
+    return decodeState(raw);
+  }catch(e){
+    return false;
+  }
+}
+function writeToURL(){
+  const raw = encodeState();
+  const next = "state=" + encodeURIComponent(raw);
+  window.history.replaceState(null, "", "#" + next);
+}
+
+/* ---------------------------
+   COMPUTE AGGREGATE RESULT
+--------------------------- */
+function compute(){
+  let totalVoters2 = 0;
+  let votesA = 0;
+  let votesB = 0;
+
+  for (const g of GROUPS){
+    const t = state[g.key].turnout / 100;
+    const b = state[g.key].shareB / 100;
+    const a = 1 - b;
+
+    const participating = g.votes * t;
+    totalVoters2 += participating;
+
+    votesA += participating * a;
+    votesB += participating * b;
+  }
+
+  const totalValid = votesA + votesB;
+  const shareA = totalValid > 0 ? votesA / totalValid : 0.5;
+  const shareB = totalValid > 0 ? votesB / totalValid : 0.5;
+  const turnoutInscritos = INSCRITOS > 0 ? totalVoters2 / INSCRITOS : 0;
+
+  return { shareA, shareB, turnoutInscritos };
+}
+
+function renderHero(){
+  const r = compute();
+  const aPct = r.shareA * 100;
+  const bPct = r.shareB * 100;
+
+  const winner =
+    (aPct >= 51) ? FINAL_A.label :
+    (bPct >= 51) ? FINAL_B.label :
+    (aPct >= bPct) ? FINAL_A.label : FINAL_B.label;
+
+  const winnerLine = document.getElementById("winnerLine");
+  winnerLine.textContent = `Vencedor: ${winner}`;
+
+  document.getElementById("scoreA").innerHTML = `${FINAL_A.label}: <strong>${fmtPct1(aPct)}</strong>`;
+  document.getElementById("scoreB").innerHTML = `${FINAL_B.label}: <strong>${fmtPct1(bPct)}</strong>`;
+  document.getElementById("turnout2").textContent = fmtPct1(r.turnoutInscritos * 100);
+
+  document.getElementById("barBigA").style.width = aPct.toFixed(4) + "%";
+  document.getElementById("barBigB").style.width = bPct.toFixed(4) + "%";
+}
+
+/* ---------------------------
+   MUNICÍPIOS: cálculo + render
+   Convenção assumida no JSON:
+   - participacao: % de inscritos que votaram na 1.ª volta no concelho
+   - ajs/av/jcf/hgm/mm/outros: % entre os votos expressos na 1.ª volta (somam ~100)
+   A simulação transforma isto em quotas % dos inscritos por "grupo de origem"
+   e aplica os controlos (turnout + split AJS/AV).
+--------------------------- */
+
+function fmtPct1Compact(x){
+  return (Math.round(x * 10) / 10).toFixed(1) + "%";
+}
+
+function municipioToBaseShares(m){
+  const part = Number(m.participacao) || 0;
+
+  // quota entre inscritos, por grupo de origem (em pontos percentuais)
+  const shares = {
+    ajs: part * ((Number(m.ajs) || 0) / 100),
+    av:  part * ((Number(m.av)  || 0) / 100),
+    jcf: part * ((Number(m.jcf) || 0) / 100),
+    hgm: part * ((Number(m.hgm) || 0) / 100),
+    lmm: part * ((Number(m.mm)  || 0) / 100),
+    left_other: part * ((Number(m.outros) || 0) / 100),
+    abst: Math.max(0, 100 - part)
+  };
+  return shares;
+}
+
+function computeMunicipioResult(m){
+  const base = municipioToBaseShares(m);
+
+  let votesA = 0;
+  let votesB = 0;
+
+  for (const g of GROUPS){
+    const key = g.key;
+    const baseShare = base[key] ?? 0; // em % dos inscritos
+    const t = (state[key]?.turnout ?? 0) / 100;  // % do grupo que vota na 2.ª volta
+    const b = (state[key]?.shareB ?? 50) / 100;  // % Ventura entre votantes do grupo
+    const a = 1 - b;
+
+    const participating = baseShare * t; // % dos inscritos que votam na 2.ª volta vindo deste grupo
+    votesA += participating * a;
+    votesB += participating * b;
+  }
+
+  const totalValid = votesA + votesB;          // % dos inscritos (participação simulada)
+  const pctA = totalValid > 0 ? (votesA / totalValid) * 100 : 50;
+  const pctB = totalValid > 0 ? (votesB / totalValid) * 100 : 50;
+
+  return {
+    concelho: m.concelho,
+    concelho_key: m.concelho_key || m.concelho,
+    ajs: pctA,
+    av: pctB,
+    participacao2: totalValid
+  };
+}
+
+function buildMuniRow(r){
+  const row = document.createElement("div");
+  row.className = "muniRow";
+  row.innerHTML = `
+    <div class="name" title="${r.concelho}">${r.concelho}</div>
+    <div class="num">${fmtPct1Compact(r.ajs)}</div>
+    <div class="num">${fmtPct1Compact(r.av)}</div>
+    <div class="num muted">${fmtPct1Compact(r.participacao2)}</div>
+  `;
+  return row;
+}
+
+function renderMunicipios(){
+  const section = document.getElementById("muniSection");
+  if (!section) return;
+
+  if (!Array.isArray(MUNICIPIOS) || MUNICIPIOS.length === 0){
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+
+  const results = MUNICIPIOS.map(computeMunicipioResult);
+
+  const topSeguro = [...results].sort((a,b) => b.ajs - a.ajs).slice(0,10);
+  const topVentura = [...results].sort((a,b) => b.av - a.av).slice(0,10);
+
+  const top10SeguroEl = document.getElementById("top10Seguro");
+  const top10VenturaEl = document.getElementById("top10Ventura");
+  const allInner = document.getElementById("muniAllInner");
+
+  if (top10SeguroEl){
+    top10SeguroEl.innerHTML = "";
+    topSeguro.forEach(r => top10SeguroEl.appendChild(buildMuniRow(r)));
+  }
+  if (top10VenturaEl){
+    top10VenturaEl.innerHTML = "";
+    topVentura.forEach(r => top10VenturaEl.appendChild(buildMuniRow(r)));
+  }
+
+  // “Ver todos” (quando aberto, renderiza lista completa, ordenada por nome)
+  const allBox = document.getElementById("muniAll");
+  const isOpen = allBox && !allBox.hidden;
+
+  if (isOpen && allInner){
+    const all = [...results].sort((a,b) => (a.concelho_key || "").localeCompare(b.concelho_key || ""));
+    allInner.innerHTML = "";
+    all.forEach(r => allInner.appendChild(buildMuniRow(r)));
+  }
+}
+
+function toggleAllMunicipios(){
+  const allBox = document.getElementById("muniAll");
+  const btn = document.getElementById("btnToggleAll");
+  if (!allBox || !btn) return;
+
+  allBox.hidden = !allBox.hidden;
+  btn.textContent = allBox.hidden ? "Ver todos" : "Fechar";
+
+  // render completo ao abrir
+  renderMunicipios();
+}
+
+
+/* ---------------------------
+   CARD UI
+   - Turnout slider + numeric + +/- nudge
+   - Composite bar: active length = turnout, handle adjusts split (shareB)
+--------------------------- */
+function el(tag, attrs={}, children=[]){
+  const node = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs)){
+    if (k === "class") node.className = v;
+    else if (k === "text") node.textContent = v;
+    else if (k === "html") node.innerHTML = v;
+    else node.setAttribute(k, v);
+  }
+  for (const c of children) node.appendChild(c);
+  return node;
+}
+
+function baseShareOfInscritos(votes){
+  return votes / INSCRITOS;
+}
+
+function buildCards(){
+  const cards = document.getElementById("cards");
+  cards.innerHTML = "";
+
+  for (const g of GROUPS){
+    const baseShare = baseShareOfInscritos(g.votes) * 100;
+
+    const card = el("div", { class:"card", id:`card_${g.key}` });
+
+    const head = el("div", { class:"cardHead" }, [
+      el("div", {}, [
+        el("div", { class:"cardTitle", text: g.name }),
+        el("div", { class:"cardMeta", text: "Grupo de origem (1.ª volta)" })
+      ]),
+      el("div", { class:"basePill", html: `Base: <strong>${baseShare.toFixed(2)}%</strong> dos inscritos` })
+    ]);
+
+    const controls = el("div", { class:"controls" });
+
+    /* Turnout */
+    const turnoutLabel = el("div", { class:"ctrlLabel" }, [
+      el("span", { text: "Que percentagem vota na 2.ª volta?" }),
+      el("strong", { id:`turnout_read_${g.key}`, text: state[g.key].turnout + "%" })
+    ]);
+
+    const turnoutSlider = el("input", {
+      type:"range", min:"0", max:"100", step:"1",
+      value: String(state[g.key].turnout),
+      id:`turnout_${g.key}`,
+      "aria-label": `Participação na 2.ª volta — ${g.name}`
+    });
+
+    const turnoutNum = el("input", {
+      type:"number", min:"0", max:"100", step:"1", inputmode:"numeric",
+      value: String(state[g.key].turnout),
+      id:`turnout_num_${g.key}`,
+      "aria-label": `Participação (número) — ${g.name}`
+    });
+
+    const turnoutNudge = el("div", { class:"tinyBtns" }, [
+      el("button", { type:"button", text:"–", id:`turnout_minus_${g.key}` }),
+      el("button", { type:"button", text:"+", id:`turnout_plus_${g.key}` })
+    ]);
+
+    const turnoutRow = el("div", { class:"turnoutRow" }, [
+      turnoutSlider,
+      el("div", { class:"numBox" }, [turnoutNum, el("span",{text:"%"}), turnoutNudge])
+    ]);
+
+    /* Preference (composite) */
+    const prefLabel = el("div", { class:"ctrlLabel" }, [
+      el("span", { text: "Entre os que votam: Seguro vs Ventura" }),
+      el("strong", { id:`pref_read_${g.key}`, text: `Ventura ${state[g.key].shareB}%` })
+    ]);
+
+    const track = el("div", { class:"track", id:`track_${g.key}`, "aria-label": `Preferência — ${g.name}` });
+    const active = el("div", { class:"active", id:`active_${g.key}` });
+    const segA = el("div", { class:"a", id:`segA_${g.key}` });
+    const segB = el("div", { class:"b", id:`segB_${g.key}` });
+    active.appendChild(segA);
+    active.appendChild(segB);
+
+    const handle = el("div", { class:"handle", id:`handle_${g.key}`, role:"slider" });
+    track.appendChild(active);
+    track.appendChild(handle);
+
+    const prefNum = el("input", {
+      type:"number", min:"0", max:"100", step:"1", inputmode:"numeric",
+      value: String(state[g.key].shareB),
+      id:`pref_num_${g.key}`,
+      "aria-label": `Percentagem Ventura (dos que votam) — ${g.name}`
+    });
+
+    const prefNudge = el("div", { class:"tinyBtns" }, [
+      el("button", { type:"button", text:"–", id:`pref_minus_${g.key}` }),
+      el("button", { type:"button", text:"+", id:`pref_plus_${g.key}` })
+    ]);
+
+    const prefRow = el("div", { class:"compositeWrap" }, [
+      track,
+      el("div", { class:"numBox" }, [prefNum, el("span",{text:"% AV"}), prefNudge])
+    ]);
+
+    const hint = el("div", { class:"miniHint", html:
+      `A barra colorida representa os que votam na 2.ª volta (comprimento = participação). Arrasta o marcador para ajustar a divisão do voto válido: arrastar para a esquerda aumenta a proporção de votos em António José Seguro (segmento verde); arrastar para a direita aumenta a proporção de votos em André Ventura (segmento azul).`
+    });
+
+    const chips = el("div", { class:"row2" }, [
+      el("span", { class:"chip", html: `<span class="dot dotS"></span><strong>Seguro</strong> = ${100 - state[g.key].shareB}% (dos votantes)` }),
+      el("span", { class:"chip", html: `<span class="dot dotV"></span><strong>Ventura</strong> = ${state[g.key].shareB}% (dos votantes)` })
+    ]);
+
+    controls.appendChild(el("div", {}, [turnoutLabel, turnoutRow]));
+    controls.appendChild(el("div", {}, [prefLabel, prefRow, hint, chips]));
+
+    card.appendChild(head);
+    card.appendChild(controls);
+    cards.appendChild(card);
+
+    // wire events
+    wireTurnout(g.key);
+    wirePreference(g.key);
+    refreshCard(g.key);
+  }
+}
+
+function wireTurnout(key){
+  const slider = document.getElementById(`turnout_${key}`);
+  const num = document.getElementById(`turnout_num_${key}`);
+  const minus = document.getElementById(`turnout_minus_${key}`);
+  const plus  = document.getElementById(`turnout_plus_${key}`);
+
+  const commit = (v) => {
+    const x = clampInt(v);
+    state[key].turnout = x;
+    slider.value = String(x);
+    if (document.activeElement !== num) num.value = String(x);
+    refreshCard(key);
+    renderHero();
+	renderMunicipios();
+	writeToURL();
+  };
+
+  slider.addEventListener("input", () => commit(parseFloat(slider.value)));
+  num.addEventListener("change", () => commit(parseFloat(num.value)));
+  num.addEventListener("blur", () => commit(parseFloat(num.value)));
+
+  minus.addEventListener("click", () => commit(state[key].turnout - 1));
+  plus.addEventListener("click",  () => commit(state[key].turnout + 1));
+}
+
+function wirePreference(key){
+  const track = document.getElementById(`track_${key}`);
+  const handle = document.getElementById(`handle_${key}`);
+  const num = document.getElementById(`pref_num_${key}`);
+  const minus = document.getElementById(`pref_minus_${key}`);
+  const plus  = document.getElementById(`pref_plus_${key}`);
+
+  const commit = (v) => {
+    const x = clampInt(v);
+    state[key].shareB = x;
+    if (document.activeElement !== num) num.value = String(x);
+    refreshCard(key);
+    renderHero();
+	renderMunicipios();
+    writeToURL();
+  };
+
+  num.addEventListener("change", () => commit(parseFloat(num.value)));
+  num.addEventListener("blur", () => commit(parseFloat(num.value)));
+  minus.addEventListener("click", () => commit(state[key].shareB - 1));
+  plus.addEventListener("click",  () => commit(state[key].shareB + 1));
+
+  // Drag handle (touch-friendly)
+  let dragging = false;
+  let startX = 0;
+  let startShareB = 0;
+  let width = 1;
+
+  const onDown = (e) => {
+    e.preventDefault();
+    dragging = true;
+    width = Math.max(1, track.getBoundingClientRect().width);
+    startX = (e.touches ? e.touches[0].clientX : e.clientX);
+    startShareB = state[key].shareB;
+
+    window.addEventListener("mousemove", onMove, { passive:false });
+    window.addEventListener("mouseup", onUp, { passive:false });
+    window.addEventListener("touchmove", onMove, { passive:false });
+    window.addEventListener("touchend", onUp, { passive:false });
+  };
+
+  const onMove = (e) => {
+    if (!dragging) return;
+    e.preventDefault();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX);
+    const dx = x - startX;
+    const delta = Math.round((dx / width) * 100); // + => more AV
+    commit(startShareB + delta);
+  };
+
+  const onUp = (e) => {
+    if (!dragging) return;
+    e.preventDefault();
+    dragging = false;
+    window.removeEventListener("mousemove", onMove);
+    window.removeEventListener("mouseup", onUp);
+    window.removeEventListener("touchmove", onMove);
+    window.removeEventListener("touchend", onUp);
+  };
+
+  handle.addEventListener("mousedown", onDown, { passive:false });
+  handle.addEventListener("touchstart", onDown, { passive:false });
+
+  // Tap track: jump handle to position
+  track.addEventListener("click", (e) => {
+    // Avoid if click begins on input/handle
+    if (e.target === handle) return;
+    const rect = track.getBoundingClientRect();
+    const rel = (e.clientX - rect.left) / rect.width; // 0..1
+    const shareA = clampInt(rel * 100); // boundary at AJS share
+    const shareB = 100 - shareA;
+    commit(shareB);
+  });
+}
+
+function refreshCard(key){
+  const turnout = state[key].turnout;
+  const shareB = state[key].shareB;
+  const shareA = 100 - shareB;
+
+  document.getElementById(`turnout_read_${key}`).textContent = turnout + "%";
+  document.getElementById(`pref_read_${key}`).textContent = `Ventura ${shareB}%`;
+
+  const track = document.getElementById(`track_${key}`);
+  const active = document.getElementById(`active_${key}`);
+  const segA = document.getElementById(`segA_${key}`);
+  const segB = document.getElementById(`segB_${key}`);
+  const handle = document.getElementById(`handle_${key}`);
+
+  // active width proportional to turnout
+  active.style.width = turnout + "%";
+
+  // split inside active based on share
+  segA.style.width = shareA + "%";
+  segB.style.width = shareB + "%";
+
+  // handle position at boundary between A and B within active area
+  const w = track.getBoundingClientRect().width || 1;
+  const activePx = w * (turnout / 100);
+  const boundaryPx = activePx * (shareA / 100);
+  handle.style.left = boundaryPx + "px";
+
+  // update chips
+  const chips = document.querySelector(`#card_${key} .row2`);
+  if (chips){
+    chips.innerHTML = `
+      <span class="chip"><span class="dot dotS"></span><strong>Seguro</strong> = ${shareA}% (dos votantes)</span>
+      <span class="chip"><span class="dot dotV"></span><strong>Ventura</strong> = ${shareB}% (dos votantes)</span>
+    `;
+  }
+}
+
+/* ---------------------------
+   COPY LINK + TOAST
+--------------------------- */
+async function copyLink(){
+  writeToURL();
+  const url = window.location.href;
+  try{
+    await navigator.clipboard.writeText(url);
+    showToast("Link copiado.");
+  }catch(e){
+    // fallback
+    const ta = document.createElement("textarea");
+    ta.value = url;
+    document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand("copy"); showToast("Link copiado."); }
+    catch(err){ showToast("Não foi possível copiar automaticamente."); }
+    document.body.removeChild(ta);
+  }
+}
+function showToast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 1600);
+}
+
+/* ---------------------------
+   CONTROLS (defensive binding)
+--------------------------- */
+const byId = (id) => document.getElementById(id);
+
+const btnCopy = byId("btnCopy");
+if (btnCopy) btnCopy.addEventListener("click", copyLink);
+
+const btnInfo = byId("btnInfo");
+if (btnInfo) btnInfo.addEventListener("click", () => {
+  const d = byId("helpBox");
+  if (!d) return;
+  d.open = !d.open;
+  d.scrollIntoView({ behavior:"smooth", block:"start" });
+});
+
+const resetAll = byId("resetAll");
+if (resetAll) resetAll.addEventListener("click", () => {
+  initNeutral();
+  buildCards();
+  renderHero();
+  renderMunicipios();
+  writeToURL();
+  showToast("Reposto.");
+});
+
+/* Se ainda existir um botão no footer, liga-o ao mesmo reset */
+const btnResetToNeutral = byId("btnResetToNeutral");
+if (btnResetToNeutral) btnResetToNeutral.addEventListener("click", () => {
+  initNeutral();
+  buildCards();
+  renderHero();
+  renderMunicipios();
+  writeToURL();
+  showToast("Reposto.");
+});
+
+const btnToggleAll = byId("btnToggleAll");
+if (btnToggleAll) btnToggleAll.addEventListener("click", toggleAllMunicipios);
+
+
+/* ---------------------------
+   BOOT
+--------------------------- */
+(function boot(){
+  initNeutral();
+  const loaded = readFromURL();
+  if (!loaded) writeToURL();
+  buildCards();
+  renderHero();
+  renderMunicipios();
+
+  // refresh handle positions after layout settle (mobile)
+  setTimeout(() => {
+    for (const g of GROUPS) refreshCard(g.key);
+  }, 50);
+
+  window.addEventListener("resize", () => {
+    for (const g of GROUPS) refreshCard(g.key);
+  });
+})();
+</script>
+</body>
+</html>
