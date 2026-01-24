@@ -4157,10 +4157,6 @@ function renderHero(){
   const r = compute();
   const aPct = r.shareA * 100;
   const bPct = r.shareB * 100;
-  const r = compute();
-  const aPct = r.shareA * 100;
-  const bPct = r.shareB * 100;
-
 
   const winner =
     (aPct >= 51) ? FINAL_A.label :
@@ -4168,17 +4164,28 @@ function renderHero(){
     (aPct >= bPct) ? FINAL_A.label : FINAL_B.label;
 
   const winnerLine = document.getElementById("winnerLine");
-  winnerLine.textContent = `Vencedor: ${winner}`;
+  if (winnerLine) winnerLine.textContent = `Vencedor: ${winner}`;
 
- document.getElementById("scoreA").innerHTML =
-  `${FINAL_A.label}: <strong>${fmtPct1(aPct)}</strong> <span style="color:var(--muted)">· ${fmtIntPT(aVotes)} votos</span>`;
-document.getElementById("scoreB").innerHTML =
-  `${FINAL_B.label}: <strong>${fmtPct1(bPct)}</strong> <span style="color:var(--muted)">· ${fmtIntPT(bVotes)} votos</span>`;
-document.getElementById("turnout2").textContent =
-  `${fmtPct1(r.turnoutInscritos * 100)} · ${fmtIntPT(voters2)} votantes`;
+  // Votos absolutos (discreto)
+  const voters2 = Math.round(r.totalVoters2 || 0);
+  const aVotes  = Math.round(r.votesA || 0);
+  const bVotes  = Math.round(r.votesB || 0);
 
-  document.getElementById("barBigA").style.width = aPct.toFixed(4) + "%";
-  document.getElementById("barBigB").style.width = bPct.toFixed(4) + "%";
+  const scoreA = document.getElementById("scoreA");
+  const scoreB = document.getElementById("scoreB");
+  const turnout2 = document.getElementById("turnout2");
+
+  if (scoreA) scoreA.innerHTML =
+    `${FINAL_A.label}: <strong>${fmtPct1(aPct)}</strong> <span style="color:var(--muted)">· ${fmtIntPT(aVotes)} votos</span>`;
+  if (scoreB) scoreB.innerHTML =
+    `${FINAL_B.label}: <strong>${fmtPct1(bPct)}</strong> <span style="color:var(--muted)">· ${fmtIntPT(bVotes)} votos</span>`;
+  if (turnout2) turnout2.textContent =
+    `${fmtPct1(r.turnoutInscritos * 100)} · ${fmtIntPT(voters2)} votantes`;
+
+  const barA = document.getElementById("barBigA");
+  const barB = document.getElementById("barBigB");
+  if (barA) barA.style.width = aPct.toFixed(4) + "%";
+  if (barB) barB.style.width = bPct.toFixed(4) + "%";
 }
 
 /* ---------------------------
