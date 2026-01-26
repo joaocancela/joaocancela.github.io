@@ -544,7 +544,7 @@
 		E, para simplificar, assume-se que quem vota na 2.ª volta escolhe mesmo um dos dois -- votos em branco e nulos não são tomados em conta na simulação. O objetivo desta página é permitir explorar cenários e não prever resultados.</p>
 		<p>		
 		Créditos: João Cancela (NOVA FCSH), com o apoio do ChatGPT 5.2. Bugs e sugestões devem ser reportados para  <a href = mailto:joaocancela@fcsh.unl.pt> joaocancela@fcsh.unl.pt </a> ou <a href = https://www.x.com/joaoc> @joaoc </a> no twitter.      </p>
-		<p>Cronologia: 20 de Janeiro de 2026: Versão inicial com o cálculo de percentagem de votos total;  24 de Janeiro de 2026: adicionados resultados absolutos previstos (número de votos) e resultados por por concelho.</p>
+		<p>Cronologia: 20 de Janeiro de 2026 - lançamento da primeira versão, com o cálculo das percentagens finais obtidas por cada candidato; 24 de Janeiro de 2026 - adicionada a indicação do número absoluto de votos por candidato e a desagregação dos resultados por concelho.</p>
     </details>
 
 
@@ -575,7 +575,7 @@
       <div class="muniControls">
         <button id="btnToggleAll" class="ghost">Ver todos</button>
         <div class="miniHint" id="muniNote">
-Os valores mostram a percentagem do voto válido (AJS/AV) e da participação (entre inscritos), recalculadas em tempo real. Em cada concelho, a simulação aplica aos resultados da primeira volta os parâmetros definidos acima.        </div>
+Os valores mostram as percentagens de votos válidos (AJS/AV) e da participação (entre inscritos), recalculadas em tempo real. Em cada concelho, a simulação aplica aos resultados da primeira volta os parâmetros definidos acima.</div>
       </div>
 
       <div class="muniAll" id="muniAll" hidden>
@@ -607,17 +607,17 @@ Os valores mostram a percentagem do voto válido (AJS/AV) e da participação (e
    DATA: 1.ª volta (base para transferências)
    (Usando os valores fornecidos pelo utilizador)
 --------------------------- */
-const INSCRITOS = 11017202;
-const VOTANTES_1V = 5767057;
+const INSCRITOS = 11039672 ;
+const VOTANTES_1V = 5769394 ;
 
 const GROUPS = [
-  { key:"ajs", name:"António José Seguro", votes:1754904 },
-  { key:"av",  name:"André Ventura", votes:1326648 },
-  { key:"jcf", name:"João Cotrim de Figueiredo", votes:902571 },
-  { key:"hgm", name:"Henrique Gouveia e Melo", votes:695091 },
-  { key:"lmm", name:"Luís Marques Mendes", votes:637394 },
-  { key:"left_other", name:"Catarina Martins, António Filipe, Manuel João Vieira, Jorge Pinto, André Pestana e Humberto Correia", votes: (116303 + 92589 + 60899 + 38536 + 10893 + 4622) },
-  { key:"abst", name:"Abstenção, em branco e nulos", votes: (INSCRITOS - VOTANTES_1V) + 61226 + 65381 }
+  { key:"ajs", name:"António José Seguro", votes:1755764 },
+  { key:"av",  name:"André Ventura", votes:1326942 },
+  { key:"jcf", name:"João Cotrim de Figueiredo", votes:903201  },
+  { key:"hgm", name:"Henrique Gouveia e Melo", votes:695244  },
+  { key:"lmm", name:"Luís Marques Mendes", votes:637535  },
+  { key:"left_other", name:"Catarina Martins (2,06%), António Filipe (1,6%), Manuel João Vieira (1,1%), Jorge Pinto (0,7%), André Pestana (0,2%) e Humberto Correia (0,1%)", votes: (116303 + 92589 + 60899 + 38536 + 10893 + 4622) },
+  { key:"abst", name:"Abstenção, em branco e nulos", votes: (INSCRITOS - VOTANTES_1V) + 61237  + 65386  }
 ];
 
 /* ---------------------------
